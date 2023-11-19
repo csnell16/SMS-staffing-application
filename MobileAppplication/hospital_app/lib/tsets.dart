@@ -88,7 +88,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
 
   Widget _buildTextField(String label, Function(String?) onSave, double screenWidth, double screenHeight) {
     return Padding(
-      padding: EdgeInsets.only(top: screenHeight * 0.01,bottom: screenHeight * 0.05),
+      padding: EdgeInsets.only(top: screenHeight * 0.03,bottom: screenHeight * 0.1),
       child: TextFormField(
         textAlign: TextAlign.left,
         style: TextStyle(
@@ -101,12 +101,12 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
           labelText: label,
           labelStyle: TextStyle(
             color: Colors.white, // Example color
-            fontSize: 16, // Example font size
+            fontSize: 18, // Example font size
             fontWeight: FontWeight.bold, // Example font weight
             fontFamily: 'Proxima Nova', // Example font family
           ),
           border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03, vertical: screenHeight * 0.01),
+          contentPadding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenHeight * 0.03),
         ),
         onSaved: onSave,
         validator: (value) => value == null || value.isEmpty ? 'Please enter a $label' : null,
@@ -117,7 +117,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
 
   Widget _buildDateTimePicker(String label, String value, VoidCallback onTap, double screenWidth, double screenHeight) {
     return Padding(
-      padding: EdgeInsets.only(bottom: screenHeight * 0.05),
+      padding: EdgeInsets.only(top: screenHeight * 0.01,bottom: screenHeight * 0.04),
       child: InkWell(
         onTap: onTap,
         child: InputDecorator(
@@ -175,7 +175,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
 
   Widget _buildSubmitButton(double screenWidth, double screenHeight) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.03),
+      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.1),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.black,
