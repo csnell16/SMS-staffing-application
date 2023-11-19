@@ -26,7 +26,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
           style: TextStyle(fontSize:22,color: Colors.white,fontWeight: FontWeight.bold,fontFamily:'Proxima Nova'),
 
         ),
-        backgroundColor: Colors.deepPurple, // Updated color
+        // backgroundColor: Colors.deepPurple, // Updated color
         elevation: 4, // Shadow under the AppBar
         // actions: <Widget>[
         //   IconButton(
@@ -42,9 +42,9 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               tileMode: TileMode.repeated,
-              stops: [0.35, 0.90],
+              stops: [0.35, 0.85],
 
-              colors: [Colors.purple, Colors.deepPurple], // Gradient colors
+              colors: [Color(0xFF0f0f0f), Color(0xFF171717)], // Gradient colors
 
             ),
           ),
@@ -58,10 +58,10 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            stops: [0.35, 0.90],
+            stops: [0.35, 0.95],
             tileMode: TileMode.repeated,
 
-            colors: [Color(0xFF212121), Color(0xFF616161)],
+            colors: [Color(0xFF212224), Color(0xFF212224)],
           ),
         ),
         child: SingleChildScrollView(
@@ -88,28 +88,39 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
 
   Widget _buildTextField(String label, Function(String?) onSave, double screenWidth, double screenHeight) {
     return Padding(
-      padding: EdgeInsets.only(top: screenHeight * 0.03,bottom: screenHeight * 0.1),
+      padding: EdgeInsets.only(top: screenHeight * 0.02,bottom: screenHeight * 0.1),
       child: TextFormField(
+        cursorColor: Color(0xFF630f0b),
         textAlign: TextAlign.left,
         style: TextStyle(
-          fontSize: 18,
+          fontSize: 19,
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontFamily: 'Proxima Nova',
         ),
+
         decoration: InputDecoration(
+
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white), // Default border color
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white), // Border color when the field is selected
+          ),
           labelText: label,
           labelStyle: TextStyle(
+
             color: Colors.white, // Example color
             fontSize: 18, // Example font size
             fontWeight: FontWeight.bold, // Example font weight
             fontFamily: 'Proxima Nova', // Example font family
           ),
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
           contentPadding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenHeight * 0.03),
         ),
         onSaved: onSave,
         validator: (value) => value == null || value.isEmpty ? 'Please enter a $label' : null,
+
       ),
     );
   }
@@ -178,13 +189,13 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       padding: EdgeInsets.symmetric(vertical: screenHeight * 0.1),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.black,
-          elevation: 5,
+          backgroundColor: Color(0xFF0a0a0a),
+          elevation: 0,
           alignment: Alignment.center,
           // textStyle: ,
-          foregroundColor: Colors.red,
+          foregroundColor: Color(0xFF820f09),
           // visualDensity:const VisualDensity(horizontal: .8,vertical: .8) ,
-          shadowColor: Colors.deepPurple,
+          // shadowColor: Color(0xFF820f09),
 
           padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.2, vertical: screenHeight * 0.015),
           shape: RoundedRectangleBorder(
@@ -192,9 +203,10 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
           ),
         ),
         onPressed: () {
+          print("Submitted Request SMS sent");
           // Rest of the code remains the same
         },
-        child: const Text('Submit Request',
+        child: const Text('Submit Request  ',
             textAlign: TextAlign.left,
           style: TextStyle(fontSize: 22,color: Color(0xFFFFFFFF),fontWeight: FontWeight.bold,fontFamily:'Proxima Nova'),
           overflow: TextOverflow.ellipsis,),

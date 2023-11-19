@@ -33,27 +33,27 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
       date: DateTime(2023, 12, 1),
       fromTime: TimeOfDay(hour: 9, minute: 0),
       toTime: TimeOfDay(hour: 17, minute: 0),
-      replyDeadline: DateTime(2023, 11, 25),
+      replyDeadline: DateTime(2023, 11, 25, 17, 30), // Deadline with specific time
     ),
     ShiftRequest(
-      position: "Barista",
+      position: "Nurse",
       date: DateTime(2023, 12, 2),
       fromTime: TimeOfDay(hour: 8, minute: 0),
       toTime: TimeOfDay(hour: 16, minute: 0),
-      replyDeadline: DateTime(2023, 11, 26),
+      replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
     ),
     ShiftRequest(
-      position: "Barista",
+      position: "Surgeon",
       date: DateTime(2023, 12, 2),
       fromTime: TimeOfDay(hour: 8, minute: 0),
       toTime: TimeOfDay(hour: 16, minute: 0),
-      replyDeadline: DateTime(2023, 11, 26),
+      replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
     ),      ShiftRequest(
-      position: "Barista",
+      position: "Reception",
       date: DateTime(2023, 12, 2),
       fromTime: TimeOfDay(hour: 8, minute: 0),
       toTime: TimeOfDay(hour: 16, minute: 0),
-      replyDeadline: DateTime(2023, 11, 26),
+      replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
     ),      ShiftRequest(
       position: "Barista",
       date: DateTime(2023, 12, 2),
@@ -77,11 +77,13 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
   }
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: Colors.grey[850], // Dark background like CreateShiftRequestPage33
       appBar: AppBar(
         title: Text(
-          'Open Shift Request',
+          'Open Shift Requests',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize:22,color: Colors.white,fontWeight: FontWeight.bold,fontFamily:'Proxima Nova'),
 
@@ -104,20 +106,36 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
               tileMode: TileMode.repeated,
               stops: [0.35, 0.90],
 
-              colors: [Colors.purple, Colors.deepPurple], // Gradient colors
+              colors: [Color(0xFF0f0f0f), Color(0xFF171717)], // Gradient colors
 
             ),
           ),
         ),
       ),
-      body: ListView.builder(
-        itemCount: _shiftRequests.length,
-        itemBuilder: (context, index) {
-          return _buildShiftRequestItem(context, _shiftRequests[index]);
-        },
+      body: Container(
+        width: screenWidth,
+        height: screenHeight,
+
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: [0.35, 0.90],
+            tileMode: TileMode.repeated,
+
+            colors: [Color(0xFF212224), Color(0xFF212224)],
+          ),
+        ),
+        child: ListView.builder(
+          itemCount: _shiftRequests.length,
+          itemBuilder: (context, index) {
+            return _buildShiftRequestItem(context, _shiftRequests[index]);
+          },
+        ),
       ),
     );
   }
+
 
   Widget _buildShiftRequestItem(BuildContext context, ShiftRequest request) {
     bool isSelected = _selectedRequest == request;
@@ -127,16 +145,16 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
       onLongPressUp: () => setState(() => _selectedRequest = null),
       onLongPress: () => _showCancelConfirmation(context, request),
       child: Card(
-        // color: isSelected ? Colors.red : Colors.white, // Change color when selected
-        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+        color: const Color(0xFF1a1a1a),
+        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
         ),
-        shadowColor: Colors.grey.withOpacity(0.2),
-        elevation: 5,
+        shadowColor: Color(0xFF820f09),
+        elevation:0,
         child: InkWell(
-          splashColor: Colors.red,
-          onTap: () {}, // You can add functionality here if needed
+          splashColor: Color(0xFF820f09),
+          onTap: () {}, // Placeholder for tap functionality
           child: Column(
             children: [
               ListTile(
@@ -145,25 +163,20 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
                   request.position,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                    fontSize: 22,
                     fontFamily: 'Proxima Nova',
-                    color: Colors.black,
+                    color: Color(0xFFffffff),
                   ),
                 ),
-                subtitle: Text(
-                  'Date: ${_formatDate(request.date)}\nTime: ${_formatTime(request.fromTime)} - ${_formatTime(request.toTime)}',
-                  style: _infoTextStyle(),
-                ),
-              ),
-              Divider(thickness: 1, indent: 20, endIndent: 20, color: Colors.black),
-              Padding(
-                padding: EdgeInsets.fromLTRB(20, 5, 20, 10),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Reply by: ${_formatDate(request.replyDeadline)}',
-                    style: _infoTextStyle(),
-                  ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildRichText('Date: ', _formatDate(request.date)),
+                    _buildRichText('Time: ', '${_formatTime(request.fromTime)} - ${_formatTime(request.toTime)}'),
+                    Divider(thickness: 1, indent: 0, endIndent: 0, color: Colors.black),
+
+                    _buildRichText('Respond By: ', _formatDateTime(request.replyDeadline)),
+                  ],
                 ),
               ),
             ],
@@ -172,6 +185,8 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
       ),
     );
   }
+
+
 
   TextStyle _infoTextStyle() {
     return TextStyle(
@@ -182,8 +197,22 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
     );
   }
 
+  RichText _buildRichText(String label, String value) {
+    return RichText(
+      text: TextSpan(
+        style: DefaultTextStyle.of(context).style,
+        children: <TextSpan>[
+          TextSpan(text: label, style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold, color: Colors.white60,fontFamily: 'Proxima Nova',)),
+          TextSpan(text: value, style: TextStyle(fontSize: 15,color: Colors.white,fontWeight: FontWeight.bold,fontFamily: 'Proxima Nova',)),
+        ],
+      ),
+    );
+  }
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
   String _formatTime(TimeOfDay time) {

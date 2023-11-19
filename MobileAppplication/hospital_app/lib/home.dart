@@ -19,11 +19,10 @@ class NavigationBarPage extends StatefulWidget {
 
 class _NavigationBarPageState extends State<NavigationBarPage> {
   final List<Widget> _children = [
-    ShiftRequestsListPage22(shiftRequests: [],),
-
     CreateShiftRequestPage33(),
 
-    ShiftRequestsListPage(shiftRequests: []),
+    ShiftRequestsListPage22(shiftRequests: [],),
+    ShiftRequestsListPage223(shiftRequests: []),
 
   ];
   @override
@@ -32,9 +31,9 @@ class _NavigationBarPageState extends State<NavigationBarPage> {
       extendBody: true,
       body: _children[widget.selectedIndex],
       bottomNavigationBar: CurvedNavigationBar(
-        color: Colors.blueAccent,
+        color: Color(0xFF630f0b),
         backgroundColor: Colors.transparent,
-        buttonBackgroundColor: Color.fromRGBO(255, 63, 111, 1),
+        buttonBackgroundColor: Colors.white,
         height: 50,
         index: widget.selectedIndex,
         onTap: (index) {
@@ -46,17 +45,17 @@ class _NavigationBarPageState extends State<NavigationBarPage> {
           Icon(
             Icons.account_circle,
             size: 26,
-            color: Colors.white,
+            color: Colors.black,
           ),
           Icon(
-            Icons.home,
+            Icons.add_circle_outline,
             size: 26,
-            color: Colors.white,
+            color: Colors.black,
           ),
           Icon(
-            Icons.add_shopping_cart,
+            Icons.list,
             size: 26,
-            color: Colors.white,
+            color: Colors.black,
           ),
         ],
       ),
