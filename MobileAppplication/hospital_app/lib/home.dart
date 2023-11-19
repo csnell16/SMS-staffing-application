@@ -19,10 +19,11 @@ class NavigationBarPage extends StatefulWidget {
 
 class _NavigationBarPageState extends State<NavigationBarPage> {
   final List<Widget> _children = [
+    ShiftRequestsListPage22(shiftRequests: [],),
+
     CreateShiftRequestPage33(),
 
     ShiftRequestsListPage(shiftRequests: []),
-    ShiftRequestsListPage22(shiftRequests: [],),
 
   ];
   @override

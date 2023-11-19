@@ -75,7 +75,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
                   _buildTextField('Position', (value) => _position = value!, screenWidth, screenHeight),
                   _buildDateTimePicker('Selected Date', '${_selectedDate.toLocal().toString().split(' ')[0]}', () => _selectDate(context, true), screenWidth, screenHeight),
                   _buildTimePickerRow(screenWidth, screenHeight),
-                  _buildDateTimePicker('Reply Deadline', '${_replyDeadline.toLocal().toString().split(' ')[0]}', () => _selectDate(context, false), screenWidth, screenHeight),
+                  _buildDateTimePicker('Reply Deadline', '${_formatDateTime(_replyDeadline)}', () => _selectDateTime(context, false), screenWidth, screenHeight),
                   _buildSubmitButton(screenWidth, screenHeight),
                 ],
               ),
@@ -218,6 +218,46 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
         ],
       ),
     );
+  }
+  String _formatDateTime(DateTime dateTime) {
+    // Format the DateTime into a string as per your requirements
+    return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+  Future<void> _selectDateTime(BuildContext context, bool isShiftDate) async {
+    // First, pick the date
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: isShiftDate ? _selectedDate : _replyDeadline,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2025),
+    );
+
+    if (pickedDate != null) {
+      // If a date is picked, proceed to pick the time
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(isShiftDate ? _selectedDate : _replyDeadline),
+      );
+
+      if (pickedTime != null) {
+        // Combine the picked date and time into a single DateTime
+        final DateTime combinedDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+
+        setState(() {
+          if (isShiftDate) {
+            _selectedDate = combinedDateTime;
+          } else {
+            _replyDeadline = combinedDateTime;
+          }
+        });
+      }
+    }
   }
 
   _selectDate(BuildContext context, bool isShiftDate) async {

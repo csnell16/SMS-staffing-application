@@ -25,6 +25,8 @@ class ShiftRequestsListPage22 extends StatefulWidget {
 }
 
 class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
+  ShiftRequest? _selectedRequest; // State variable to track the selected request
+
   List<ShiftRequest> _shiftRequests=[
     ShiftRequest(
       position: "Cashier",
@@ -79,16 +81,34 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
       backgroundColor: Colors.grey[850], // Dark background like CreateShiftRequestPage33
       appBar: AppBar(
         title: Text(
-          'Open Shift Requests',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Roboto', // Consistent font family
+          'Open Shift Request',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize:22,color: Colors.white,fontWeight: FontWeight.bold,fontFamily:'Proxima Nova'),
+
+        ),
+        backgroundColor: Colors.deepPurple, // Updated color
+        elevation: 4, // Shadow under the AppBar
+        // actions: <Widget>[
+        //   IconButton(
+        //     icon: Icon(Icons.settings), // Example icon
+        //     onPressed: () {
+        //       // Action for settings or other functionality
+        //     },
+        //   ),
+        // ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              tileMode: TileMode.repeated,
+              stops: [0.35, 0.90],
+
+              colors: [Colors.purple, Colors.deepPurple], // Gradient colors
+
+            ),
           ),
         ),
-        backgroundColor: Colors.grey[900], // Consistent AppBar color
-        centerTitle: true,
       ),
       body: ListView.builder(
         itemCount: _shiftRequests.length,
@@ -100,73 +120,80 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
   }
 
   Widget _buildShiftRequestItem(BuildContext context, ShiftRequest request) {
-    return Container(
-      margin: EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 3,
-            blurRadius: 5,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        title: Text(
-          request.position,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            fontFamily: 'Roboto', // Consistent font family
-            color: Colors.black, // Text color
+    bool isSelected = _selectedRequest == request;
+
+    return GestureDetector(
+      onLongPressDown: (_) => setState(() => _selectedRequest = request),
+      onLongPressUp: () => setState(() => _selectedRequest = null),
+      onLongPress: () => _showCancelConfirmation(context, request),
+      child: Card(
+        // color: isSelected ? Colors.red : Colors.white, // Change color when selected
+        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        shadowColor: Colors.grey.withOpacity(0.2),
+        elevation: 5,
+        child: InkWell(
+          splashColor: Colors.red,
+          onTap: () {}, // You can add functionality here if needed
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                title: Text(
+                  request.position,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    fontFamily: 'Proxima Nova',
+                    color: Colors.black,
+                  ),
+                ),
+                subtitle: Text(
+                  'Date: ${_formatDate(request.date)}\nTime: ${_formatTime(request.fromTime)} - ${_formatTime(request.toTime)}',
+                  style: _infoTextStyle(),
+                ),
+              ),
+              Divider(thickness: 1, indent: 20, endIndent: 20, color: Colors.black),
+              Padding(
+                padding: EdgeInsets.fromLTRB(20, 5, 20, 10),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Reply by: ${_formatDate(request.replyDeadline)}',
+                    style: _infoTextStyle(),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        subtitle: Padding(
-          padding: EdgeInsets.only(top: 8),
-          child: Text(
-            _formatShiftDetails(request),
-            textAlign: TextAlign.left,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Proxima Nova',
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        trailing: IconButton(
-          icon: Icon(Icons.cancel, color: Colors.red),
-          onPressed: () => _showCancelConfirmation(context, request),
-        ),
-        onTap: () {
-          // Handle tap event
-        },
       ),
     );
   }
 
-
-  String _formatShiftDetails(ShiftRequest request) {
-    String formatDate(DateTime date) {
-      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    }
-
-    String formatTime(TimeOfDay time) {
-      final hour = time.hour.toString().padLeft(2, '0');
-      final minute = time.minute.toString().padLeft(2, '0');
-      return '$hour:$minute';
-    }
-
-    return 'Date: ${formatDate(request.date)}, '
-        'From: ${formatTime(request.fromTime)} '
-        'to ${formatTime(request.toTime)}\n'
-        'Reply by: ${formatDate(request.replyDeadline)}';
+  TextStyle _infoTextStyle() {
+    return TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.bold,
+      color: Colors.black,
+      fontFamily: 'Proxima Nova',
+    );
   }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+
+
 
 
   void _showCancelConfirmation(BuildContext context, ShiftRequest request) {
