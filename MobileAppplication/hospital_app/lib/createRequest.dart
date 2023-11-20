@@ -55,13 +55,13 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
       toTime: TimeOfDay(hour: 16, minute: 0),
       replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
     ),      ShiftRequest(
-      position: "Barista",
+      position: "Doctor",
       date: DateTime(2023, 12, 2),
       fromTime: TimeOfDay(hour: 8, minute: 0),
       toTime: TimeOfDay(hour: 16, minute: 0),
       replyDeadline: DateTime(2023, 11, 26),
     ),      ShiftRequest(
-      position: "Barista",
+      position: "Doctor",
       date: DateTime(2023, 12, 2),
       fromTime: TimeOfDay(hour: 8, minute: 0),
       toTime: TimeOfDay(hour: 16, minute: 0),
@@ -139,6 +139,8 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
 
   Widget _buildShiftRequestItem(BuildContext context, ShiftRequest request) {
     bool isSelected = _selectedRequest == request;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return GestureDetector(
       onLongPressDown: (_) => setState(() => _selectedRequest = request),
@@ -146,7 +148,10 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
       onLongPress: () => _showCancelConfirmation(context, request),
       child: Card(
         color: const Color(0xFF1a1a1a),
-        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        margin:EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.02, // 2% of screen width
+        vertical: screenHeight * 0.01, // 1% of screen height
+      ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
         ),
@@ -158,8 +163,10 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
           child: Column(
             children: [
               ListTile(
-                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                title: Text(
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.05, // 5% of screen width
+                  vertical: screenHeight * 0.01, // 1% of screen height
+                ),                title: Text(
                   request.position,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,

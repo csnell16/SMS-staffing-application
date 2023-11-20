@@ -9,7 +9,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
   final _formKey = GlobalKey<FormState>();
   String _position = '';
   DateTime _selectedDate = DateTime.now();
-  DateTime _replyDeadline = DateTime.now().add(Duration(days: 7));
+  DateTime? _replyDeadline;
   TimeOfDay? _selectedFromTime = TimeOfDay.now();
   TimeOfDay? _selectedToTime;
 
@@ -75,7 +75,13 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
                   _buildTextField('Position', (value) => _position = value!, screenWidth, screenHeight),
                   _buildDateTimePicker('Selected Date', '${_selectedDate.toLocal().toString().split(' ')[0]}', () => _selectDate(context, true), screenWidth, screenHeight),
                   _buildTimePickerRow(screenWidth, screenHeight),
-                  _buildDateTimePicker('Reply Deadline', '${_formatDateTime(_replyDeadline)}', () => _selectDateTime(context, false), screenWidth, screenHeight),
+                  _buildDateTimePicker(
+                    'Respond By',
+                    _replyDeadline != null ? _formatDateTime(_replyDeadline!) : 'Select Date and Time', // Display 'Not set' if null
+                        () => _selectDateTime(context, false),
+                    screenWidth,
+                    screenHeight,
+                  ),
                   _buildSubmitButton(screenWidth, screenHeight),
                 ],
               ),
@@ -160,6 +166,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
   }
 
 
+
   Widget _buildTimePickerRow(double screenWidth, double screenHeight) {
     return Row(
       children: [
@@ -219,7 +226,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Shift Request Created'),
-        content: Text('Position: $_position\nDate: ${_selectedDate.toLocal().toString().split(' ')[0]}\nFrom Time: ${_selectedFromTime?.format(context)}\nTo Time: ${_selectedToTime?.format(context)}\nReply Deadline: ${_replyDeadline.toLocal().toString().split(' ')[0]}'),
+        content: Text('Position: $_position\nDate: ${_selectedDate.toLocal().toString().split(' ')[0]}\nFrom Time: ${_selectedFromTime?.format(context)}\nTo Time: ${_selectedToTime?.format(context)}\nReply Deadline: ${_replyDeadline?.toLocal().toString().split(' ')[0]}'),
         actions: <Widget>[
           TextButton(
             onPressed: () {
@@ -231,15 +238,23 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       ),
     );
   }
-  String _formatDateTime(DateTime dateTime) {
-    // Format the DateTime into a string as per your requirements
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) {
+      return 'Select Date and Time';
+    }
     return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
+
   Future<void> _selectDateTime(BuildContext context, bool isShiftDate) async {
+    DateTime initialDate = isShiftDate ? _selectedDate : (_replyDeadline ?? DateTime.now());
+    TimeOfDay initialTime = isShiftDate
+        ? TimeOfDay.fromDateTime(_selectedDate)
+        : (_replyDeadline != null ? TimeOfDay.fromDateTime(_replyDeadline!) : TimeOfDay.now());
+
     // First, pick the date
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: isShiftDate ? _selectedDate : _replyDeadline,
+      initialDate: initialDate,
       firstDate: DateTime.now(),
       lastDate: DateTime(2025),
     );
@@ -248,7 +263,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       // If a date is picked, proceed to pick the time
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.fromDateTime(isShiftDate ? _selectedDate : _replyDeadline),
+        initialTime: initialTime,
       );
 
       if (pickedTime != null) {
@@ -271,6 +286,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       }
     }
   }
+
 
   _selectDate(BuildContext context, bool isShiftDate) async {
     final DateTime? picked = await showDatePicker(
