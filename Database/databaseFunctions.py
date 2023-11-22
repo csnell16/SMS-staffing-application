@@ -9,33 +9,35 @@ cursor = connection.cursor()
 cursor.execute('PRAGMA foreign_keys = ON')
 connection.commit()
 
-# Employee table
-cursor.execute('''CREATE TABLE IF NOT EXISTS employees(
-               employeeID TEXT PRIMARY KEY,
-               phone TEXT,
-               notifications INTEGER DEFAULT 0
-               )''')
+def initialize_tables():
+    # intialize the tables if they have not already been created
+    
+    # Employees table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS employees(
+                employeeID TEXT PRIMARY KEY,
+                phone TEXT,
+                notifications INTEGER DEFAULT 0
+                )''')
 
-# Shifts table
-cursor.execute('''CREATE TABLE IF NOT EXISTS shifts(
-               shiftID INTEGER PRIMARY KEY AUTOINCREMENT,
-               date TEXT,
-               time TEXT,
-               executionTime TEXT,
-               status INTEGER DEFAULT 0,
-               assignee TEXT DEFAULT NULL,
-               FOREIGN KEY(assignee) REFERENCES employees(employeeID) ON UPDATE CASCADE
-               )''')
+    # Shifts table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS shifts(
+                shiftID INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT,
+                time TEXT,
+                executionTime TEXT,
+                status INTEGER DEFAULT 0,
+                assignee TEXT DEFAULT NULL,
+                FOREIGN KEY(assignee) REFERENCES employees(employeeID) ON UPDATE CASCADE
+                )''')
 
-# Availability table
-cursor.execute('''CREATE TABLE IF NOT EXISTS availability(
-               employeeID TEXT NOT NULL,
-               date TEXT,
-               FOREIGN KEY(employeeID) REFERENCES employees(employeeID) ON UPDATE CASCADE,
-               PRIMARY KEY (employeeID, date)
-               )''')
-
-connection.commit()
+    # Availability table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS availability(
+                employeeID TEXT NOT NULL,
+                date TEXT,
+                FOREIGN KEY(employeeID) REFERENCES employees(employeeID) ON UPDATE CASCADE,
+                PRIMARY KEY (employeeID, date)
+                )''')
+    connection.commit()
 
 # db insert functions
 def insert_employee(employeeID, phone, notifications=0):
@@ -101,5 +103,7 @@ def delete_availability(employeeID, date):
     cursor.execute('DELETE FROM availability WHERE employeeID = :employeeID AND date = :date',
                    {'employeeID': employeeID, 'date': date})
     connection.commit()
+
+initialize_tables()
 
 connection.close()
