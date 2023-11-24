@@ -16,6 +16,7 @@ def initialize_tables():
     cursor.execute('''CREATE TABLE IF NOT EXISTS employees(
                 employeeID TEXT PRIMARY KEY,
                 phone TEXT,
+                email TEXT,
                 notifications INTEGER DEFAULT 0
                 )''')
 
@@ -40,8 +41,8 @@ def initialize_tables():
     connection.commit()
 
 # db insert functions
-def insert_employee(employeeID, phone, notifications=0):
-    cursor.execute('INSERT OR IGNORE INTO employees VALUES (?, ?, ?)', (employeeID, phone, notifications))
+def insert_employee(employeeID, phone, email, notifications=0):
+    cursor.execute('INSERT OR IGNORE INTO employees VALUES (?, ?, ?, ?)', (employeeID, phone, email, notifications))
     connection.commit()
 
 def insert_shift(date, time, executionTime):
@@ -68,6 +69,13 @@ def update_employee_phone(employeeID, phone):
                    SET phone = :phone
                    WHERE employeeID = :employeeID''',
                    {'employeeID': employeeID, 'phone': phone})
+    connection.commit()
+
+def update_employee_email(employeeID, email):
+    cursor.execute('''UPDATE employees
+                   SET email = :email
+                   WHERE employeeID = :employeeID''',
+                   {'employeeID': employeeID, 'email': email})
     connection.commit()
 
 def update_employee_notifications(employeeID, notifications):
