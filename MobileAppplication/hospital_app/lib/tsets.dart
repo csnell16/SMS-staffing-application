@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class CreateShiftRequestPage33 extends StatefulWidget {
   @override
@@ -212,6 +214,10 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
         onPressed: () {
           print("Submitted Request SMS sent");
           // Rest of the code remains the same
+          if (_formKey.currentState!.validate()) {
+            _formKey.currentState!.save();
+            _sendShiftRequest();
+          }
         },
         child: const Text('Submit Request  ',
             textAlign: TextAlign.left,
@@ -325,5 +331,34 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       });
     }
   }
+
+  Future<void> _sendShiftRequest() async {
+    final url = Uri.parse('YOUR_API_ENDPOINT'); // Replace with your API endpoint
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          'position': _position,
+          'selectedDate': _selectedDate.toIso8601String(),
+          'replyDeadline': _replyDeadline?.toIso8601String(),
+          'fromTime': _selectedFromTime?.format(context),
+          'toTime': _selectedToTime?.format(context),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // Handle successful response
+        _showConfirmationDialog();
+      } else {
+        // Handle error response
+        print('Failed to submit request: ${response.body}');
+      }
+    } catch (error) {
+      // Handle network error
+      print('Error sending shift request: $error');
+    }
+  }
+
 
 }
