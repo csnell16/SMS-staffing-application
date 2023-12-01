@@ -341,9 +341,10 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
         body: json.encode({
           'position': _position,
           'selectedDate': _selectedDate.toIso8601String(),
-          'replyDeadline': _replyDeadline?.toIso8601String(),
           'fromTime': _selectedFromTime?.format(context),
           'toTime': _selectedToTime?.format(context),
+          'replyDeadline': _replyDeadline?.toIso8601String(),
+
         }),
       );
 

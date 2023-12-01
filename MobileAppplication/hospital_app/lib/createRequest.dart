@@ -1,20 +1,9 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 import 'package:flutter/material.dart';
 
-class ShiftRequest {
-  final String position;
-  final DateTime date;
-  final TimeOfDay fromTime;
-  final TimeOfDay toTime;
-  final DateTime replyDeadline;
 
-  ShiftRequest({
-    required this.position,
-    required this.date,
-    required this.fromTime,
-    required this.toTime,
-    required this.replyDeadline,
-  });
-}
 class ShiftRequestsListPage22 extends StatefulWidget {
   final List<ShiftRequest> shiftRequests;
 
@@ -27,54 +16,76 @@ class ShiftRequestsListPage22 extends StatefulWidget {
 class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
   ShiftRequest? _selectedRequest; // State variable to track the selected request
 
-  List<ShiftRequest> _shiftRequests=[
-    ShiftRequest(
-      position: "Cashier",
-      date: DateTime(2023, 12, 1),
-      fromTime: TimeOfDay(hour: 9, minute: 0),
-      toTime: TimeOfDay(hour: 17, minute: 0),
-      replyDeadline: DateTime(2023, 11, 25, 17, 30), // Deadline with specific time
-    ),
-    ShiftRequest(
-      position: "Nurse",
-      date: DateTime(2023, 12, 2),
-      fromTime: TimeOfDay(hour: 8, minute: 0),
-      toTime: TimeOfDay(hour: 16, minute: 0),
-      replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
-    ),
-    ShiftRequest(
-      position: "Surgeon",
-      date: DateTime(2023, 12, 2),
-      fromTime: TimeOfDay(hour: 8, minute: 0),
-      toTime: TimeOfDay(hour: 16, minute: 0),
-      replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
-    ),      ShiftRequest(
-      position: "Reception",
-      date: DateTime(2023, 12, 2),
-      fromTime: TimeOfDay(hour: 8, minute: 0),
-      toTime: TimeOfDay(hour: 16, minute: 0),
-      replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
-    ),      ShiftRequest(
-      position: "Doctor",
-      date: DateTime(2023, 12, 2),
-      fromTime: TimeOfDay(hour: 8, minute: 0),
-      toTime: TimeOfDay(hour: 16, minute: 0),
-      replyDeadline: DateTime(2023, 11, 26),
-    ),      ShiftRequest(
-      position: "Doctor",
-      date: DateTime(2023, 12, 2),
-      fromTime: TimeOfDay(hour: 8, minute: 0),
-      toTime: TimeOfDay(hour: 16, minute: 0),
-      replyDeadline: DateTime(2023, 11, 26),
-    ),
-    // Add more objects as needed
-  ];
+  // List<ShiftRequest> _shiftRequests=[
+  //   ShiftRequest(
+  //     position: "Cashier",
+  //     date: DateTime(2023, 12, 1),
+  //     fromTime: TimeOfDay(hour: 9, minute: 0),
+  //     toTime: TimeOfDay(hour: 17, minute: 0),
+  //     replyDeadline: DateTime(2023, 11, 25, 17, 30), // Deadline with specific time
+  //   ),
+  //   ShiftRequest(
+  //     position: "Nurse",
+  //     date: DateTime(2023, 12, 2),
+  //     fromTime: TimeOfDay(hour: 8, minute: 0),
+  //     toTime: TimeOfDay(hour: 16, minute: 0),
+  //     replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
+  //   ),
+  //   ShiftRequest(
+  //     position: "Surgeon",
+  //     date: DateTime(2023, 12, 2),
+  //     fromTime: TimeOfDay(hour: 8, minute: 0),
+  //     toTime: TimeOfDay(hour: 16, minute: 0),
+  //     replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
+  //   ),      ShiftRequest(
+  //     position: "Reception",
+  //     date: DateTime(2023, 12, 2),
+  //     fromTime: TimeOfDay(hour: 8, minute: 0),
+  //     toTime: TimeOfDay(hour: 16, minute: 0),
+  //     replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
+  //   ),      ShiftRequest(
+  //     position: "Doctor",
+  //     date: DateTime(2023, 12, 2),
+  //     fromTime: TimeOfDay(hour: 8, minute: 0),
+  //     toTime: TimeOfDay(hour: 16, minute: 0),
+  //     replyDeadline: DateTime(2023, 11, 26),
+  //   ),      ShiftRequest(
+  //     position: "Doctor",
+  //     date: DateTime(2023, 12, 2),
+  //     fromTime: TimeOfDay(hour: 8, minute: 0),
+  //     toTime: TimeOfDay(hour: 16, minute: 0),
+  //     replyDeadline: DateTime(2023, 11, 26),
+  //   ),
+  //   // Add more objects as needed
+  // ];
+  List<ShiftRequest> _shiftRequests = [];
 
   @override
   void initState() {
     super.initState();
+    _fetchShiftRequests();
+
     // _shiftRequests = widget.shiftRequests;
   }
+  Future<void> _fetchShiftRequests() async {
+    final url = Uri.parse('YOUR_FLASK_ENDPOINT/getOpenShiftRequests');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _shiftRequests = data.map((json) => ShiftRequest.fromJson(json)).toList();
+        });
+      } else {
+        // Handle server error
+        print('Server error: ${response.body}');
+      }
+    } catch (e) {
+      // Handle network error
+      print('Network error: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -259,3 +270,33 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
     );
   }
 }
+class ShiftRequest {
+  final String position;
+  final DateTime date;
+  final TimeOfDay fromTime;
+  final TimeOfDay toTime;
+  final DateTime replyDeadline;
+
+  ShiftRequest({
+    required this.position,
+    required this.date,
+    required this.fromTime,
+    required this.toTime,
+    required this.replyDeadline,
+  });
+
+  factory ShiftRequest.fromJson(Map<String, dynamic> json) {
+    return ShiftRequest(
+      position: json['position'],
+      date: DateTime.parse(json['date']),
+      fromTime: TimeOfDay(
+          hour: int.parse(json['fromTime'].split(':')[0]),
+          minute: int.parse(json['fromTime'].split(':')[1])),
+      toTime: TimeOfDay(
+          hour: int.parse(json['toTime'].split(':')[0]),
+          minute: int.parse(json['toTime'].split(':')[1])),
+      replyDeadline: DateTime.parse(json['replyDeadline']),
+    );
+  }
+}
+
