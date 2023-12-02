@@ -8,28 +8,20 @@ app = Flask(__name__)
 account_sid = ''
 auth_token = ''
 client = Client(account_sid, auth_token)
-#checks for replyDAte no after actual shift data and time
-
-request_id = 54168413  # Replace with actual request ID
-phone_numbers2 = ["",""]  # RejectedPhoneNumbers
-listOFavailableStaffNumbers=["",""]
 scheduler = sched.scheduler(time.time, time.sleep)
-shiftDataFromDBAndNumberOfWinner=[""]
-
-
-# connect app to this. 
-# retrieve fake get sceduled into app card list 
-# Have placeholders for where DB stuff will need to be done
 
 
 def getPhoneNumbersOfAvailableStaffs(list_type):
-    # Replace with actual database query logic
+    # Needs to Updated with DB INFO
     if list_type == 'available':
         # Query for available staff phone numbers
         return ['+1234567890', '+1987654321']
     elif list_type == 'rejected':
         # Query for rejected staff phone numbers
         return ['+1098765432', '+1209876543']
+    elif list_type == 'winner':
+        # Query for rejected staff phone numbers
+        return ['+1098765432']
     else:
         return []
 
@@ -37,15 +29,18 @@ def getPhoneNumbersOfAvailableStaffs(list_type):
 
 @app.route('/getCancelShift', methods=['GET'])
 def cancelShift():
-    #GET data back from APP and query DB to delete and handle all future messages to that RequestID appropriately
+    #GET data(RequestID) back from APP and query DB to delete and handle all future messages to that RequestID appropriately
     # Needs Error Handling
     pass
 
 @app.route('/getOpenShiftRequests', methods=['GET'])
 def getOpenShiftRequests():
+    #Data From DB
 
     shift_requests = [
         {
+            'requestID': "48464684",
+
             'position': "Doctor",
             'date': "2023-12-01",  # ISO format date
             'fromTime': "09:00",
@@ -53,6 +48,8 @@ def getOpenShiftRequests():
             'replyDeadline': "2023-11-25T17:30:00"  # ISO format datetime
         },
         {
+            'requestID': "48464684",
+
             'position': "Nurse",
             'date': "2023-12-02",
             'fromTime': "08:00",
@@ -60,6 +57,7 @@ def getOpenShiftRequests():
             'replyDeadline': "2023-11-26T17:30:00"
         },
         {
+            'requestID': "48464684",
             'position': "NeuroSurgeon",
             'date': "2023-12-08",
             'fromTime': "08:00",
@@ -67,6 +65,7 @@ def getOpenShiftRequests():
             'replyDeadline': "2023-12-2T17:30:00"
         },
         {
+            'requestID': "48464684",
             'position': "Physicist",
             'date': "2023-12-02",
             'fromTime': "08:00",
@@ -79,9 +78,11 @@ def getOpenShiftRequests():
 
 @app.route('/getScheduledShiftRequests', methods=['GET'])
 def getScheduledShiftRequests():
+    #Data From DB
 
     shift_requests = [
         {
+            'requestID': "48464684",
             'position': "Doctor2",
             'date': "2023-12-01",  # ISO format date
             'fromTime': "09:00",
@@ -89,6 +90,7 @@ def getScheduledShiftRequests():
             'replyDeadline': "2023-11-25T17:30:00"  # ISO format datetime
         },
         {
+            'requestID': "48464684",
             'position': "Nurse",
             'date': "2023-12-02",
             'fromTime': "08:00",
@@ -96,6 +98,7 @@ def getScheduledShiftRequests():
             'replyDeadline': "2023-11-26T17:30:00"
         },
         {
+            'requestID': "48464684",
             'position': "NeuroSurgeon",
             'date': "2023-12-08",
             'fromTime': "08:00",
@@ -103,6 +106,7 @@ def getScheduledShiftRequests():
             'replyDeadline': "2023-12-2T17:30:00"
         },
         {
+            'requestID': "48464684",
             'position': "Physicist",
             'date': "2023-12-02",
             'fromTime': "08:00",
@@ -130,29 +134,6 @@ def send_sms(sender,messageSend):
     print(message.sid)
     print(message.status)
     print(message.date_sent)
-
-
-# @app.route('/shiftCreation', methods=['POST'])
-# def shiftCreate():
-#     data = request.json
-
-
-#     requestID=894816
-#     position ="Doctor" #data.get('position')
-#     selected_date ="5/12/2023" #data.get('selectedDate')
-#     reply_deadline ="5/13/2023 14:20"# data.get('replyDeadline')
-#     from_time = "07:00"#data.get('fromTime')
-#     to_time = "19:00"#data.get('toTime')
-#     message_body = (f"You have recieved a Shift Position:\nTo accept request reply ACCEPT {requestID}\n\nThe following are the Shift details:\n"f"Shift Request ID: {requestID}\n"
-#                         f"Position: {position}\n"
-#                         f"Date: {selected_date}\n"
-#                         f"From Time: {from_time}\n"
-#                         f"To Time: {to_time}\n"
-#                         f"Reply By: {reply_deadline}")
-    
-#     for number in listOFavailableStaffNumbers:
-#         send_sms(number, message_body)
-#     print(message_body)
 
 
 
@@ -202,64 +183,6 @@ def generate_unique_request_id():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def schedule_shift_operations(execution_time, phone_numbers2,shiftDataFromDBAndNumberOfWinner):
-    now = datetime.datetime.now()
-    # delay = (execution_time - now).total_seconds()
-
-    # scheduler.enter(delay, 1, submit_shift_request, argument=(shiftDataFromDBAndNumberOfWinner,))
-    # scheduler.enter(delay + 5, 1, handleRejectionMessage, argument=(phone_numbers2,))
-
-    # scheduler.run()
-
-
-
-
-
-
-
 @app.route('/sms_webhook', methods=['POST'])
 def sms_webhook():
     print("requestHere")
@@ -296,13 +219,11 @@ def acceptMessage(message, sender):
 
 
 
-        # execution_time = datetime.datetime(2023, 5, 12, 18, 0)  # Example time
-        # schedule_shift_operations(execution_time, phone_numbers2,shiftDataFromDBAndNumberOfWinner)
 
         # At execution time the follwing funtcions is executed
-        submitShiftRequest(shiftDataFromDBAndNumberOfWinner)
-        time.sleep(5) # Sleep for 3 seconds
-        rejectionMessage(phone_numbers2)
+        shiftWinnerMessage()
+        time.sleep(5)
+        rejectionMessage()
 
 
     return jsonify(status='success'), 200
@@ -310,14 +231,16 @@ def acceptMessage(message, sender):
 
 
 
-def submitShiftRequest(shiftDataFromDBAndNumberOfWinner):
+def shiftWinnerMessage():
+    #Needs to Updated with DB INFO
+
     # data = request.json
 
     position ="Doctor" #data.get('position')
     selected_date ="5/12/2023" #data.get('selectedDate')
-    reply_deadline ="5/13/2023 14:20"# data.get('replyDeadline')
     from_time = "07:00"#data.get('fromTime')
     to_time = "19:00"#data.get('toTime')
+    request_id = 54168413  # Replace with actual request ID
 
     # Create the SMS message
     message_body = (f"Shift Request ID: {request_id} has been confirmed\n"
@@ -327,7 +250,9 @@ def submitShiftRequest(shiftDataFromDBAndNumberOfWinner):
                     f"To Time: {to_time}\n")
 
     # Send the message to each phone number
-    for number in shiftDataFromDBAndNumberOfWinner:
+    shiftWinnerNumber=getPhoneNumbersOfAvailableStaffs('winner')
+
+    for number in shiftWinnerNumber:# There should be just 1 number
         send_sms(number,message_body)
 
     return jsonify({"message": "Shift request received and SMS sent"}), 200
@@ -336,8 +261,10 @@ def submitShiftRequest(shiftDataFromDBAndNumberOfWinner):
 
 
 
-def rejectionMessage(phone_numbers2):
-    for number in phone_numbers2:
+def rejectionMessage():
+    numbers=getPhoneNumbersOfAvailableStaffs('rejected')
+
+    for number in numbers:
         send_sms(number, "Unfortunetly the shift was assigned to another staff number. Thank you for applying, we appreciate it.")
 
     return jsonify(status='success'), 200
@@ -348,6 +275,7 @@ def defaultResponse(sender):
 
 
 def confirmationMessage(sender):
+    #Needs to Updated with DB INFO
     send_sms(sender, "Thank you for applying for the shift. There are {5} other staff members who have applied as well.\nYou will be notified at {DATE-TIME} on the results.")
     return jsonify(status='success'), 200
 
