@@ -14,6 +14,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
   DateTime? _replyDeadline;
   TimeOfDay? _selectedFromTime = TimeOfDay.now();
   TimeOfDay? _selectedToTime;
+  String API_ENDPOINT="https://25d7-50-100-225-56.ngrok-free.app";
 
   @override
   Widget build(BuildContext context) {
@@ -250,14 +251,12 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
     }
     return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
-
   Future<void> _selectDateTime(BuildContext context, bool isShiftDate) async {
     DateTime initialDate = isShiftDate ? _selectedDate : (_replyDeadline ?? DateTime.now());
     TimeOfDay initialTime = isShiftDate
         ? TimeOfDay.fromDateTime(_selectedDate)
         : (_replyDeadline != null ? TimeOfDay.fromDateTime(_replyDeadline!) : TimeOfDay.now());
 
-    // First, pick the date
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -266,14 +265,12 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
     );
 
     if (pickedDate != null) {
-      // If a date is picked, proceed to pick the time
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
         initialTime: initialTime,
       );
 
       if (pickedTime != null) {
-        // Combine the picked date and time into a single DateTime
         final DateTime combinedDateTime = DateTime(
           pickedDate.year,
           pickedDate.month,
@@ -281,6 +278,15 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
           pickedTime.hour,
           pickedTime.minute,
         );
+
+        if (!isShiftDate && combinedDateTime.isAfter(_selectedDate)) {
+          // Clear the reply deadline and show a warning message
+          setState(() {
+            _replyDeadline = null;
+          });
+          _showInvalidDateWarning();
+          return;
+        }
 
         setState(() {
           if (isShiftDate) {
@@ -293,7 +299,6 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
     }
   }
 
-
   _selectDate(BuildContext context, bool isShiftDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -302,6 +307,14 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       lastDate: DateTime(2025),
     );
     if (picked != null) {
+      if (!isShiftDate && picked.isAfter(_selectedDate)) {
+        // Clear the reply deadline and show a warning message
+        setState(() {
+          _replyDeadline = null;
+        });
+        _showInvalidDateWarning();
+        return;
+      }
       setState(() {
         if (isShiftDate) {
           _selectedDate = picked;
@@ -311,6 +324,26 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       });
     }
   }
+
+  void _showInvalidDateWarning() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Invalid Date'),
+        content: Text('Reply deadline cannot be after the shift start time.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   _selectTime(BuildContext context, bool isFromTime) async {
     final initialTime = isFromTime
         ? (_selectedFromTime ?? TimeOfDay.now())
@@ -333,7 +366,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
   }
 
   Future<void> _sendShiftRequest() async {
-    final url = Uri.parse('YOUR_API_ENDPOINT'); // Replace with your API endpoint
+    final url = Uri.parse('$API_ENDPOINT/shiftCreation'); // Replace with your API endpoint
     try {
       final response = await http.post(
         url,

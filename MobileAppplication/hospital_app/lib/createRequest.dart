@@ -15,6 +15,7 @@ class ShiftRequestsListPage22 extends StatefulWidget {
 
 class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
   ShiftRequest? _selectedRequest; // State variable to track the selected request
+  String API_ENDPOINT="https://25d7-50-100-225-56.ngrok-free.app";
 
   // List<ShiftRequest> _shiftRequests=[
   //   ShiftRequest(
@@ -68,7 +69,7 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
     // _shiftRequests = widget.shiftRequests;
   }
   Future<void> _fetchShiftRequests() async {
-    final url = Uri.parse('YOUR_FLASK_ENDPOINT/getOpenShiftRequests');
+    final url = Uri.parse('$API_ENDPOINT/getOpenShiftRequests');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -189,11 +190,15 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildRichText('Request ID: ', request.requestId.toString()), // Display requestId
+
                     _buildRichText('Date: ', _formatDate(request.date)),
                     _buildRichText('Time: ', '${_formatTime(request.fromTime)} - ${_formatTime(request.toTime)}'),
                     Divider(thickness: 1, indent: 0, endIndent: 0, color: Colors.black),
 
                     _buildRichText('Respond By: ', _formatDateTime(request.replyDeadline)),
+                    _buildRichText('Current Bids: ', request.currentBids), // Display requestId
+
                   ],
                 ),
               ),
@@ -242,16 +247,33 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
 
 
 
+  void _cancelShiftRequest(String requestId) async {
+    final url = Uri.parse('$API_ENDPOINT/getCancelShift');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'requestId': requestId}),
+      );
+      if (response.statusCode == 200) {
+        // Handle successful cancellation
+      } else {
+        // Handle server error
+      }
+    } catch (e) {
+      // Handle network error
+    }
+  }
 
   void _showCancelConfirmation(BuildContext context, ShiftRequest request) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Cancel Request'),
-        content: Text('Are you sure you want to cancel this shift request for ${request.position}?'),
-        actions: <Widget>[
+        content: Text('Are you sure you want to cancel this shift request for ${request.position}?'),        actions: <Widget>[
           TextButton(
             onPressed: () {
+              _cancelShiftRequest(request.requestId); // Call the cancel function
               setState(() {
                 _shiftRequests.remove(request);
               });
@@ -259,16 +281,16 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
             },
             child: Text('Yes', style: TextStyle(color: Colors.red)),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog without removing
-            },
-            child: Text('No'),
-          ),
-        ],
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop(); // Close the dialog without removing
+          },
+          child: Text('No'),
+        ),        ],
       ),
     );
   }
+
 }
 class ShiftRequest {
   final String position;
@@ -276,6 +298,8 @@ class ShiftRequest {
   final TimeOfDay fromTime;
   final TimeOfDay toTime;
   final DateTime replyDeadline;
+  final String requestId; // New field
+  final String currentBids; // New field
 
   ShiftRequest({
     required this.position,
@@ -283,20 +307,48 @@ class ShiftRequest {
     required this.fromTime,
     required this.toTime,
     required this.replyDeadline,
+    required this.requestId, // Initialize in constructor
+    required this.currentBids, // Initialize in constructor
+
   });
 
   factory ShiftRequest.fromJson(Map<String, dynamic> json) {
+    // Helper function to parse TimeOfDay from a string.
+    TimeOfDay? parseTime(String? timeString) {
+      if (timeString == null) {
+        return null;
+      }
+      final parts = timeString.split(':');
+      if (parts.length != 2) {
+        return null;
+      }
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    }
+
+    // Helper function to safely parse DateTime from a string.
+    DateTime safeParseDateTime(String? dateTimeString) {
+      try {
+        return DateTime.parse(dateTimeString!);
+      } catch (e) {
+        return DateTime.now(); // default value in case of parsing error
+      }
+    }
+
     return ShiftRequest(
-      position: json['position'],
-      date: DateTime.parse(json['date']),
-      fromTime: TimeOfDay(
-          hour: int.parse(json['fromTime'].split(':')[0]),
-          minute: int.parse(json['fromTime'].split(':')[1])),
-      toTime: TimeOfDay(
-          hour: int.parse(json['toTime'].split(':')[0]),
-          minute: int.parse(json['toTime'].split(':')[1])),
-      replyDeadline: DateTime.parse(json['replyDeadline']),
+      position: json['position'] as String? ?? 'Unknown Position',
+      date: safeParseDateTime(json['date']),
+      fromTime: parseTime(json['fromTime']) ?? TimeOfDay(hour: 0, minute: 0),
+      toTime: parseTime(json['toTime']) ?? TimeOfDay(hour: 0, minute: 0),
+      replyDeadline: safeParseDateTime(json['replyDeadline']),
+      requestId: json['requestID'] as String? ?? 'Unknown ID',
+      currentBids: json['currentBids'] as String? ?? '0',
+
     );
   }
+
+
+
+
 }
+
 

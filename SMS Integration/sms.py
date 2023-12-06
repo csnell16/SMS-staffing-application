@@ -4,34 +4,38 @@ from flask import Flask, request, jsonify
 import sched
 import time
 import datetime
+import uuid
+
 app = Flask(__name__)
+
 account_sid = ''
 auth_token = ''
 client = Client(account_sid, auth_token)
-scheduler = sched.scheduler(time.time, time.sleep)
 
 
 def getPhoneNumbersOfAvailableStaffs(list_type):
     # Needs to Updated with DB INFO
     if list_type == 'available':
         # Query for available staff phone numbers
-        return ['+1234567890', '+1987654321']
+        return ['+', '+']
     elif list_type == 'rejected':
         # Query for rejected staff phone numbers
-        return ['+1098765432', '+1209876543']
+        return ['+', '+']
     elif list_type == 'winner':
-        # Query for rejected staff phone numbers
-        return ['+1098765432']
+        # Query for winner staff phone numbers
+        return ['+']
     else:
         return []
 
 
 
-@app.route('/getCancelShift', methods=['GET'])
+@app.route('/getCancelShift', methods=['POST'])
 def cancelShift():
     #GET data(RequestID) back from APP and query DB to delete and handle all future messages to that RequestID appropriately
     # Needs Error Handling
-    pass
+    print("CANCELED SHIFT")
+    return jsonify({'status': 'success', 'message': 'Shift request CANCELED successfully.'}), 200
+
 
 @app.route('/getOpenShiftRequests', methods=['GET'])
 def getOpenShiftRequests():
@@ -45,7 +49,9 @@ def getOpenShiftRequests():
             'date': "2023-12-01",  # ISO format date
             'fromTime': "09:00",
             'toTime': "17:00",
-            'replyDeadline': "2023-11-25T17:30:00"  # ISO format datetime
+            'replyDeadline': "2023-11-25T17:30:00",  # ISO format datetime
+            'currentBids': "5",
+
         },
         {
             'requestID': "48464684",
@@ -54,7 +60,9 @@ def getOpenShiftRequests():
             'date': "2023-12-02",
             'fromTime': "08:00",
             'toTime': "16:00",
-            'replyDeadline': "2023-11-26T17:30:00"
+            'replyDeadline': "2023-11-26T17:30:00",
+                        'currentBids': "55",
+
         },
         {
             'requestID': "48464684",
@@ -62,7 +70,9 @@ def getOpenShiftRequests():
             'date': "2023-12-08",
             'fromTime': "08:00",
             'toTime': "16:00",
-            'replyDeadline': "2023-12-2T17:30:00"
+            'replyDeadline': "2023-12-2T17:30:00",
+                        'currentBids': "1",
+
         },
         {
             'requestID': "48464684",
@@ -87,7 +97,9 @@ def getScheduledShiftRequests():
             'date': "2023-12-01",  # ISO format date
             'fromTime': "09:00",
             'toTime': "17:00",
-            'replyDeadline': "2023-11-25T17:30:00"  # ISO format datetime
+            'replyDeadline': "2023-11-25T17:30:00",  # ISO format datetime
+                                    'currentBids': "1",
+
         },
         {
             'requestID': "48464684",
@@ -95,7 +107,9 @@ def getScheduledShiftRequests():
             'date': "2023-12-02",
             'fromTime': "08:00",
             'toTime': "16:00",
-            'replyDeadline': "2023-11-26T17:30:00"
+            'replyDeadline': "2023-11-26T17:30:00",
+                                    'currentBids': "1",
+
         },
         {
             'requestID': "48464684",
@@ -103,7 +117,9 @@ def getScheduledShiftRequests():
             'date': "2023-12-08",
             'fromTime': "08:00",
             'toTime': "16:00",
-            'replyDeadline': "2023-12-2T17:30:00"
+            'replyDeadline': "2023-12-2T17:30:00",
+                                    'currentBids': "1",
+
         },
         {
             'requestID': "48464684",
@@ -169,10 +185,16 @@ def shiftCreate():
 
     # Return a successful response
     return jsonify({'status': 'success', 'message': 'Shift request sent successfully.'}), 200
+import uuid
+import hashlib
 
 def generate_unique_request_id():
     # Implement logic to generate a unique request ID
-    pass
+    unique_string = str(uuid.uuid4())
+    hash_object = hashlib.sha256(unique_string.encode())
+    hex_dig = hash_object.hexdigest()
+    return hex_dig[:6]  # Taking the first 6 characters
+
 
 
 
@@ -284,3 +306,4 @@ def confirmationMessage(sender):
 
 if __name__ == "__main__":
     app.run(debug=True)
+    
