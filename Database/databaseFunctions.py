@@ -59,7 +59,7 @@ def initialize_tables():
     connection.commit()
 
 # db insert functions
-def insert_employee(employeeID, phone, email, notifications=0):
+def insert_employee(employeeID, phone, email, notifications=Notifications.ON.value):
     cursor.execute('INSERT OR IGNORE INTO employees VALUES (?, ?, ?, ?)', (employeeID, phone, email, notifications))
     connection.commit()
 
@@ -118,7 +118,7 @@ def update_shift_assignee(shiftID, assignee):
                    {'shiftID': shiftID, 'assignee': assignee})
     connection.commit()
 
-def update_shift_assign_shift(shiftID, assignee, status=1):
+def update_shift_assign_shift(shiftID, assignee, status=ShiftStatus.ASSIGNED.value):
     cursor.execute('''UPDATE shifts
                    SET assignee = :assignee, status = :status
                    WHERE shiftID = :shiftID''',
