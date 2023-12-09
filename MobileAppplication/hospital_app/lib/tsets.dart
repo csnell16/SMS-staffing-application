@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -14,7 +15,6 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
   DateTime? _replyDeadline;
   TimeOfDay? _selectedFromTime = TimeOfDay.now();
   TimeOfDay? _selectedToTime;
-  String API_ENDPOINT="https://5785-50-100-225-56.ngrok-free.app";
 
   @override
   Widget build(BuildContext context) {
@@ -364,9 +364,15 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       });
     }
   }
-
+  Future<Map<String, dynamic>> loadConfig() async {
+    final jsonString = await rootBundle.loadString('assets/config.json');
+    return json.decode(jsonString);
+  }
   Future<void> _sendShiftRequest() async {
-    final url = Uri.parse('$API_ENDPOINT/shiftCreation'); // Replace with your API endpoint
+    final config = await loadConfig();
+    final String apiEndpoint = config['api_endpoint'];
+
+    final url = Uri.parse('$apiEndpoint/shiftCreation'); // Replace with your API endpoint
     try {
       final response = await http.post(
         url,

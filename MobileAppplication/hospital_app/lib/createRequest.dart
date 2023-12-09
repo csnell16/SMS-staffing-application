@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
@@ -15,7 +16,6 @@ class ShiftRequestsListPage22 extends StatefulWidget {
 
 class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
   ShiftRequest? _selectedRequest; // State variable to track the selected request
-  String API_ENDPOINT="https://5785-50-100-225-56.ngrok-free.app";
 
   // List<ShiftRequest> _shiftRequests=[
   //   ShiftRequest(
@@ -68,8 +68,14 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
 
     // _shiftRequests = widget.shiftRequests;
   }
+  Future<Map<String, dynamic>> loadConfig() async {
+    final jsonString = await rootBundle.loadString('assets/config.json');
+    return json.decode(jsonString);
+  }
   Future<void> _fetchShiftRequests() async {
-    final url = Uri.parse('$API_ENDPOINT/getOpenShiftRequests');
+    final config = await loadConfig();
+    final String apiEndpoint = config['api_endpoint'];
+    final url = Uri.parse('$apiEndpoint/getOpenShiftRequests');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -248,7 +254,9 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
 
 
   void _cancelShiftRequest(String requestId) async {
-    final url = Uri.parse('$API_ENDPOINT/getCancelShift');
+    final config = await loadConfig();
+    final String apiEndpoint = config['api_endpoint'];
+    final url = Uri.parse('$apiEndpoint/getCancelShift');
     try {
       final response = await http.post(
         url,
