@@ -158,6 +158,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage> {
               fontFamily: 'Proxima Nova',
             ),
             overflow: TextOverflow.ellipsis,
+
           ),
         ),
       ),
