@@ -1,27 +1,31 @@
 import 'package:flutter/material.dart';
-
+import 'package:logging/logging.dart';
 import 'home.dart';
 
-// void main() {
-//   runApp(MyApp());
-// }
 
 void main() {
+  _setupLogging();
   runApp(
-    MyApp(),
+    const MyApp(),
 
   );
 }
-
+void _setupLogging() {
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+}
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Cassia',
       theme: ThemeData(
         fontFamily: 'Montserrat',
-        primaryColor: Colors.indigo//Color.fromRGBO(255, 63, 111, 1),
+        primaryColor: Colors.indigo
       ),
       home: Scaffold(
         body: NavigationBarPage(selectedIndex: 0,),

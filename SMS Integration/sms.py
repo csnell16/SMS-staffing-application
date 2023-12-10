@@ -11,6 +11,8 @@ app = Flask(__name__)
 account_sid = ''
 auth_token = ''
 client = Client(account_sid, auth_token)
+# Connect app fully and clean code, add endpoint link in a file, Do Error Handling and rename files
+# Add the schedule thing and test it.
 
 
 def getPhoneNumbersOfAvailableStaffs(list_type):
@@ -92,42 +94,37 @@ def getScheduledShiftRequests():
 
     shift_requests = [
         {
-            'requestID': "48464684",
             'position': "Doctor2",
-            'date': "2023-12-01",  # ISO format date
+            'date': "2023-12-01",  
             'fromTime': "09:00",
             'toTime': "17:00",
-            'replyDeadline': "2023-11-25T17:30:00",  # ISO format datetime
-                                    'currentBids': "1",
+            'assignedToName':'Hisham2'
 
         },
         {
-            'requestID': "48464684",
             'position': "Nurse",
             'date': "2023-12-02",
             'fromTime': "08:00",
             'toTime': "16:00",
-            'replyDeadline': "2023-11-26T17:30:00",
-                                    'currentBids': "1",
+            'assignedToName':'Hisham'
+
 
         },
         {
-            'requestID': "48464684",
             'position': "NeuroSurgeon",
             'date': "2023-12-08",
             'fromTime': "08:00",
             'toTime': "16:00",
-            'replyDeadline': "2023-12-2T17:30:00",
-                                    'currentBids': "1",
+            'assignedToName':'Hisham'
 
         },
         {
-            'requestID': "48464684",
             'position': "Physicist",
             'date': "2023-12-02",
             'fromTime': "08:00",
             'toTime': "16:00",
-            'replyDeadline': "2023-11-26T17:30:00"
+            'assignedToName':'Hisham'
+
         },
 
     ]

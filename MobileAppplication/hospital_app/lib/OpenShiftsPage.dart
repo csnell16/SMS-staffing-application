@@ -1,72 +1,29 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 
-class ShiftRequestsListPage22 extends StatefulWidget {
-  final List<ShiftRequest> shiftRequests;
+class OpenShiftsListPage extends StatefulWidget {
 
-  ShiftRequestsListPage22({Key? key, required this.shiftRequests}) : super(key: key);
+  const OpenShiftsListPage({Key? key}) : super(key: key);
 
   @override
-  _ShiftRequestsListPageState createState() => _ShiftRequestsListPageState();
+  _OpenShiftsListPageState createState() => _OpenShiftsListPageState();
 }
 
-class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
-  ShiftRequest? _selectedRequest; // State variable to track the selected request
+class _OpenShiftsListPageState extends State<OpenShiftsListPage> {
+  ShiftRequest? _selectedRequest;
+  final Logger logger = Logger('OpenShiftsListPageLogger');
 
-  // List<ShiftRequest> _shiftRequests=[
-  //   ShiftRequest(
-  //     position: "Cashier",
-  //     date: DateTime(2023, 12, 1),
-  //     fromTime: TimeOfDay(hour: 9, minute: 0),
-  //     toTime: TimeOfDay(hour: 17, minute: 0),
-  //     replyDeadline: DateTime(2023, 11, 25, 17, 30), // Deadline with specific time
-  //   ),
-  //   ShiftRequest(
-  //     position: "Nurse",
-  //     date: DateTime(2023, 12, 2),
-  //     fromTime: TimeOfDay(hour: 8, minute: 0),
-  //     toTime: TimeOfDay(hour: 16, minute: 0),
-  //     replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
-  //   ),
-  //   ShiftRequest(
-  //     position: "Surgeon",
-  //     date: DateTime(2023, 12, 2),
-  //     fromTime: TimeOfDay(hour: 8, minute: 0),
-  //     toTime: TimeOfDay(hour: 16, minute: 0),
-  //     replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
-  //   ),      ShiftRequest(
-  //     position: "Reception",
-  //     date: DateTime(2023, 12, 2),
-  //     fromTime: TimeOfDay(hour: 8, minute: 0),
-  //     toTime: TimeOfDay(hour: 16, minute: 0),
-  //     replyDeadline: DateTime(2023, 11, 26, 17, 30), // Deadline with specific time
-  //   ),      ShiftRequest(
-  //     position: "Doctor",
-  //     date: DateTime(2023, 12, 2),
-  //     fromTime: TimeOfDay(hour: 8, minute: 0),
-  //     toTime: TimeOfDay(hour: 16, minute: 0),
-  //     replyDeadline: DateTime(2023, 11, 26),
-  //   ),      ShiftRequest(
-  //     position: "Doctor",
-  //     date: DateTime(2023, 12, 2),
-  //     fromTime: TimeOfDay(hour: 8, minute: 0),
-  //     toTime: TimeOfDay(hour: 16, minute: 0),
-  //     replyDeadline: DateTime(2023, 11, 26),
-  //   ),
-  //   // Add more objects as needed
-  // ];
+
   List<ShiftRequest> _shiftRequests = [];
 
   @override
   void initState() {
     super.initState();
     _fetchShiftRequests();
-
-    // _shiftRequests = widget.shiftRequests;
   }
   Future<Map<String, dynamic>> loadConfig() async {
     final jsonString = await rootBundle.loadString('assets/config.json');
@@ -79,45 +36,54 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
+        logger.info("Successfully Fetched Shift Requests:");
         List<dynamic> data = json.decode(response.body);
         setState(() {
           _shiftRequests = data.map((json) => ShiftRequest.fromJson(json)).toList();
         });
       } else {
-        // Handle server error
-        print('Server error: ${response.body}');
+        logger.severe('Server error: ${response.body}');
+        _showErrorDialog('Server error', 'Failed to fetch shift requests. Please try again later.');
+
       }
     } catch (e) {
-      // Handle network error
-      print('Network error: $e');
+      logger.severe('Network error: $e');
+      _showErrorDialog('Network error', 'Failed to connect to the server. Please check your internet connection and try again.');
+
     }
   }
-
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      backgroundColor: Colors.grey[850], // Dark background like CreateShiftRequestPage33
+      backgroundColor: Colors.grey[850],
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Open Shift Requests',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize:22,color: Colors.white,fontWeight: FontWeight.bold,fontFamily:'Proxima Nova'),
 
         ),
-        backgroundColor: Colors.deepPurple, // Updated color
-        elevation: 4, // Shadow under the AppBar
-        // actions: <Widget>[
-        //   IconButton(
-        //     icon: Icon(Icons.settings), // Example icon
-        //     onPressed: () {
-        //       // Action for settings or other functionality
-        //     },
-        //   ),
-        // ],
+        backgroundColor: Colors.deepPurple,
+        elevation: 4,
         flexibleSpace: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -134,7 +100,7 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
         width: screenWidth,
         height: screenHeight,
 
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -156,7 +122,6 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
 
 
   Widget _buildShiftRequestItem(BuildContext context, ShiftRequest request) {
-    bool isSelected = _selectedRequest == request;
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -167,26 +132,25 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
       child: Card(
         color: const Color(0xFF1a1a1a),
         margin:EdgeInsets.symmetric(
-        horizontal: screenWidth * 0.02, // 2% of screen width
-        vertical: screenHeight * 0.01, // 1% of screen height
+        horizontal: screenWidth * 0.02,
+        vertical: screenHeight * 0.01,
       ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
         ),
-        shadowColor: Color(0xFF820f09),
+        shadowColor: const Color(0xFF820f09),
         elevation:0,
         child: InkWell(
-          splashColor: Color(0xFF820f09),
-          onTap: () {}, // Placeholder for tap functionality
+          splashColor: const Color(0xFF820f09),
           child: Column(
             children: [
               ListTile(
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: screenWidth * 0.05, // 5% of screen width
-                  vertical: screenHeight * 0.01, // 1% of screen height
+                  horizontal: screenWidth * 0.05,
+                  vertical: screenHeight * 0.01,
                 ),                title: Text(
                   request.position,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
                     fontFamily: 'Proxima Nova',
@@ -196,14 +160,14 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildRichText('Request ID: ', request.requestId.toString()), // Display requestId
+                    _buildRichText('Request ID: ', request.requestId.toString()),
 
                     _buildRichText('Date: ', _formatDate(request.date)),
                     _buildRichText('Time: ', '${_formatTime(request.fromTime)} - ${_formatTime(request.toTime)}'),
-                    Divider(thickness: 1, indent: 0, endIndent: 0, color: Colors.black),
+                    const Divider(thickness: 1, indent: 0, endIndent: 0, color: Colors.black),
 
                     _buildRichText('Respond By: ', _formatDateTime(request.replyDeadline)),
-                    _buildRichText('Current Bids: ', request.currentBids), // Display requestId
+                    _buildRichText('Current Bids: ', request.currentBids),
 
                   ],
                 ),
@@ -216,23 +180,13 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
   }
 
 
-
-  TextStyle _infoTextStyle() {
-    return TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.bold,
-      color: Colors.black,
-      fontFamily: 'Proxima Nova',
-    );
-  }
-
   RichText _buildRichText(String label, String value) {
     return RichText(
       text: TextSpan(
         style: DefaultTextStyle.of(context).style,
         children: <TextSpan>[
-          TextSpan(text: label, style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold, color: Colors.white60,fontFamily: 'Proxima Nova',)),
-          TextSpan(text: value, style: TextStyle(fontSize: 15,color: Colors.white,fontWeight: FontWeight.bold,fontFamily: 'Proxima Nova',)),
+          TextSpan(text: label, style: const TextStyle(fontSize: 17,fontWeight: FontWeight.bold, color: Colors.white60,fontFamily: 'Proxima Nova',)),
+          TextSpan(text: value, style: const TextStyle(fontSize: 15,color: Colors.white,fontWeight: FontWeight.bold,fontFamily: 'Proxima Nova',)),
         ],
       ),
     );
@@ -264,36 +218,43 @@ class _ShiftRequestsListPageState extends State<ShiftRequestsListPage22> {
         body: json.encode({'requestId': requestId}),
       );
       if (response.statusCode == 200) {
-        // Handle successful cancellation
-      } else {
-        // Handle server error
+        logger.info("Successfully Canceled Shift Request: $requestId");
+
+        _showErrorDialog('Successfully Canceled Shift Request: $requestId', '');
       }
-    } catch (e) {
-      // Handle network error
+      else {
+      logger.severe('Server error: ${response.body}');
+      _showErrorDialog('Server error', 'Failed to fetch shift requests. Please try again later.');
+     }
     }
+   catch (e) {
+    logger.severe('Network error: $e');
+    _showErrorDialog('Network error', 'Failed to connect to the server. Please check your internet connection and try again.');
+
+   }
   }
 
   void _showCancelConfirmation(BuildContext context, ShiftRequest request) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Cancel Request'),
-        content: Text('Are you sure you want to cancel this shift request for ${request.position}?'),        actions: <Widget>[
+        title: const Text('Cancel Request'),
+        content: Text('Are you sure you want to cancel this shift request for ${request.position}?'), actions: <Widget>[
           TextButton(
             onPressed: () {
-              _cancelShiftRequest(request.requestId); // Call the cancel function
+              _cancelShiftRequest(request.requestId);
               setState(() {
                 _shiftRequests.remove(request);
               });
-              Navigator.of(context).pop(); // Close the dialog
+              Navigator.of(context).pop();
             },
-            child: Text('Yes', style: TextStyle(color: Colors.red)),
+            child: const Text('Yes', style: TextStyle(color: Colors.red)),
           ),
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop(); // Close the dialog without removing
+            Navigator.of(context).pop();
           },
-          child: Text('No'),
+          child: const Text('No'),
         ),        ],
       ),
     );
@@ -306,8 +267,8 @@ class ShiftRequest {
   final TimeOfDay fromTime;
   final TimeOfDay toTime;
   final DateTime replyDeadline;
-  final String requestId; // New field
-  final String currentBids; // New field
+  final String requestId;
+  final String currentBids;
 
   ShiftRequest({
     required this.position,
@@ -315,13 +276,13 @@ class ShiftRequest {
     required this.fromTime,
     required this.toTime,
     required this.replyDeadline,
-    required this.requestId, // Initialize in constructor
-    required this.currentBids, // Initialize in constructor
+    required this.requestId,
+    required this.currentBids,
 
   });
 
   factory ShiftRequest.fromJson(Map<String, dynamic> json) {
-    // Helper function to parse TimeOfDay from a string.
+
     TimeOfDay? parseTime(String? timeString) {
       if (timeString == null) {
         return null;
@@ -333,12 +294,11 @@ class ShiftRequest {
       return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
     }
 
-    // Helper function to safely parse DateTime from a string.
     DateTime safeParseDateTime(String? dateTimeString) {
       try {
         return DateTime.parse(dateTimeString!);
       } catch (e) {
-        return DateTime.now(); // default value in case of parsing error
+        return DateTime.now();
       }
     }
 
@@ -346,7 +306,7 @@ class ShiftRequest {
       position: json['position'] as String? ?? 'Unknown Position',
       date: safeParseDateTime(json['date']),
       fromTime: parseTime(json['fromTime']) ?? TimeOfDay(hour: 0, minute: 0),
-      toTime: parseTime(json['toTime']) ?? TimeOfDay(hour: 0, minute: 0),
+      toTime: parseTime(json['toTime']) ??  TimeOfDay(hour: 0, minute: 0),
       replyDeadline: safeParseDateTime(json['replyDeadline']),
       requestId: json['requestID'] as String? ?? 'Unknown ID',
       currentBids: json['currentBids'] as String? ?? '0',
