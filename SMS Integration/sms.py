@@ -1,21 +1,42 @@
 from twilio.twiml.messaging_response import MessagingResponse
+import uuid
+import hashlib
+from logging.handlers import RotatingFileHandler
+import logging
 from twilio.rest import Client
 from flask import Flask, request, jsonify
-import sched
 import time
 import datetime
 import uuid
 
+from apscheduler.schedulers.background import BackgroundScheduler
+scheduler = BackgroundScheduler(daemon=True)
+scheduler.start()
 app = Flask(__name__)
 
 account_sid = ''
 auth_token = ''
 client = Client(account_sid, auth_token)
-# Connect app fully and clean code, add endpoint link in a file, Do Error Handling and rename files
-# Add the schedule thing and test it.
+
+logging.basicConfig(level=logging.INFO,
+                    filename='app.log',#The file to log into  
+                    filemode='a',  # Append Logs to existing log file, or use 'w' for a new file every time
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+
+#To ensure that your log files do not grow too large,
+handler = RotatingFileHandler('app.log', maxBytes=10000, backupCount=3)# Will rotate the log files, keeping the file size under 10,000 bytes and keep a max of 3 log files
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logging.getLogger('').addHandler(handler)
+
+
 
 
 def getPhoneNumbersOfAvailableStaffs(list_type):
+    logging.info("Acquiring phone Numbers from DB")
+
     # Needs to Updated with DB INFO
     if list_type == 'available':
         # Query for available staff phone numbers
@@ -30,18 +51,36 @@ def getPhoneNumbersOfAvailableStaffs(list_type):
         return []
 
 
+@app.before_first_request
+def start_scheduler():
+    if not scheduler.running:
+        scheduler.start()
+
+@app.teardown_appcontext
+def shutdown_scheduler(exception=None):
+    if scheduler.running:
+        scheduler.shutdown()
 
 @app.route('/getCancelShift', methods=['POST'])
 def cancelShift():
-    #GET data(RequestID) back from APP and query DB to delete and handle all future messages to that RequestID appropriately
-    # Needs Error Handling
-    print("CANCELED SHIFT")
-    return jsonify({'status': 'success', 'message': 'Shift request CANCELED successfully.'}), 200
+    data = request.json
+    requestID = data.get('requestID')
+
+    if not requestID:
+        logging.error("No requestID provided in the cancel request")
+        return jsonify({'status': 'failed', 'message': 'RequestID is required.'}), 400
+
+    else:
+        logging.info(f"Shift {requestID} has been Successfully Canceled")
+        # Query DB to delete and handle all future messages to that RequestID appropriately
+
+        return jsonify({'status': 'success', 'message': 'Shift request CANCELED successfully.'}), 200
 
 
 @app.route('/getOpenShiftRequests', methods=['GET'])
 def getOpenShiftRequests():
     #Data From DB
+    logging.info("Sending list of all Open Shift Requests to App")
 
     shift_requests = [
         {
@@ -91,6 +130,7 @@ def getOpenShiftRequests():
 @app.route('/getScheduledShiftRequests', methods=['GET'])
 def getScheduledShiftRequests():
     #Data From DB
+    logging.info("Sending list of all Scheduled Shift Requests to App")
 
     shift_requests = [
         {
@@ -137,16 +177,13 @@ def getScheduledShiftRequests():
 def hello():
     return "Shift Management System"
 
-def send_sms(sender,messageSend):
+def sendSMS(sender,messageSend):
     message = client.messages.create(
             body=messageSend, 
             from_='+15075735578',
             to=sender
     )
-    print("SMS Details")
-    print(message.sid)
-    print(message.status)
-    print(message.date_sent)
+    logging.info("SMS Details:",message.sid,'Status:',message.status,'Date Sent:',message.date_sent)
 
 
 
@@ -154,39 +191,35 @@ def send_sms(sender,messageSend):
 def shiftCreate():
     data = request.json
 
-    # Extract the data with default values if not provided
+    #Extract the data with default values if not provided
     position = data.get('position', 'Default Position')
-    selected_date = data.get('selectedDate', 'Default Date')
+    selected_date = datetime.fromisoformat(data.get('selectedDate', 'Default Date')).strftime("%Y-%m-%d")
     reply_deadline = data.get('replyDeadline', 'Default Reply Deadline')
     from_time = data.get('fromTime', 'Default From Time')
     to_time = data.get('toTime', 'Default To Time')
 
-    # Generate a unique request ID for the shift request
-    requestID = generate_unique_request_id()  # Placeholder for the actual function to generate unique ID
+    requestID = generate_unique_request_id()  #Placeholder for the actual function to generate unique ID
 
-    # Formatting the message
-    message_body = (f"You have received a Shift Position:\n"
-                    f"To accept request reply ACCEPT {requestID}\n\n"
+    messageBody = (f"You have received a Shift Position:\n"
+                    f"To accept request respond with:\nACCEPT {requestID}\n\n"
                     f"Shift Request ID: {requestID}\n"
                     f"Position: {position}\n"
                     f"Date: {selected_date}\n"
                     f"From Time: {from_time}\n"
                     f"To Time: {to_time}\n"
-                    f"Reply By: {reply_deadline}")
+                    f"Respond By: {reply_deadline}")
 
-    #Send SMS to available staff
     for number in getPhoneNumbersOfAvailableStaffs("available"):
-        send_sms(number, message_body)
+        sendSMS(number, messageBody)
+    logging.info("Shift has been Successfully created")
 
-    print(message_body)
-
-    # Return a successful response
+    #This Shift needs then to be stored inside DB
     return jsonify({'status': 'success', 'message': 'Shift request sent successfully.'}), 200
-import uuid
-import hashlib
+
+
+
 
 def generate_unique_request_id():
-    # Implement logic to generate a unique request ID
     unique_string = str(uuid.uuid4())
     hash_object = hashlib.sha256(unique_string.encode())
     hex_dig = hash_object.hexdigest()
@@ -204,21 +237,15 @@ def generate_unique_request_id():
 
 @app.route('/sms_webhook', methods=['POST'])
 def sms_webhook():
-    print("requestHere")
+    logging.info("Accepting SMS message from user")
 
-    print(request)
-    message_body = request.form['Body']
+    messageBody = request.form['Body']
     sender = request.form['From']
 
-    # Example: Parsing a message that starts with "ACCEPT"
-    if message_body.upper().startswith("ACCEPT"):
-        return acceptMessage(message_body, sender)
-    # Add more conditions here for different types of messages
+    if messageBody.upper().startswith("ACCEPT"):# Checking if the message is according to format
+        return acceptMessage(messageBody, sender)
     else:
         return defaultResponse(sender)
-
-    # return jsonify(status='success'), 200
-
 
 
 
@@ -226,34 +253,69 @@ def sms_webhook():
 
 
 def acceptMessage(message, sender):
-    # Logic for processing the ACCEPT command
-    # Extract further details if necessary, e.g., "ACCEPT <ShiftID>"
+
     parts = message.split()
     if len(parts) >= 2:
         requestIDFromUser = parts[1]
+        #make DB calls
         if(requestIDFromUser=="CHECK DB if its a valid RequestID and respond accodingly"):
-            pass
+            if(requestIDFromUser=="If requestID HASNT BEEN CANCELED"):
+                logging.info("Confirming to user that they have applied to shift")
+                currentBids=5#DB Data
+                dateTime= "2023-11-26T17:30:00"#DB Data
+
+                confirmationMessage(sender,currentBids,dateTime)
+
+                respondByDateTime='THE Respond By DATE AND TIME FOR THE RequestID'# GET FROM DB, needs to be in Datetime format, should acccept in this format
+                scheduleShiftMessages(respondByDateTime,requestIDFromUser)
+            else:
+                logging.info("Informing user that RequestID shift has been canceled")
+
+                sendSMS(sender, "The Requested Shift has been canceled. Thank you for applying.")
+
+
+        else:
+            logging.info("Request ID given is not valid, Informed user to send a valid response")
+            sendSMS(sender, "Request ID given is not valid. Please send a valid response:\nACCEPT <RequestID>")# When the give RequestID is not found in DB
+
         
-        confirmationMessage(sender)
 
-
-
-
-        # At execution time the follwing funtcions is executed
-        shiftWinnerMessage()
-        time.sleep(5)
-        rejectionMessage()
-
+    else:
+        logging.info("Informing user they sent an Unrecognized command, not in the specified format")
+        defaultResponse(sender)
 
     return jsonify(status='success'), 200
 
 
+def scheduleShiftMessages(respondByDateTime,requestID):
+    logging.info("Scheduling Messages")
+
+    scheduler.add_job(shiftWinnerMessage, 'date', run_date=respondByDateTime, args=[requestID])
+    scheduler.add_job(rejectionMessage, 'date', run_date=respondByDateTime)
 
 
-def shiftWinnerMessage():
-    #Needs to Updated with DB INFO
 
-    # data = request.json
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def shiftWinnerMessage(requestID):
+    #Needs to Updated with DB INFO using requestID#############################
+
 
     position ="Doctor" #data.get('position')
     selected_date ="5/12/2023" #data.get('selectedDate')
@@ -262,7 +324,7 @@ def shiftWinnerMessage():
     request_id = 54168413  # Replace with actual request ID
 
     # Create the SMS message
-    message_body = (f"Shift Request ID: {request_id} has been confirmed\n"
+    messageBody = (f"Shift Request ID: {request_id} has been confirmed\n"
                     f"Position: {position}\n"
                     f"Date: {selected_date}\n"
                     f"From Time: {from_time}\n"
@@ -272,7 +334,7 @@ def shiftWinnerMessage():
     shiftWinnerNumber=getPhoneNumbersOfAvailableStaffs('winner')
 
     for number in shiftWinnerNumber:# There should be just 1 number
-        send_sms(number,message_body)
+        sendSMS(number,messageBody)
 
     return jsonify({"message": "Shift request received and SMS sent"}), 200
 
@@ -284,18 +346,22 @@ def rejectionMessage():
     numbers=getPhoneNumbersOfAvailableStaffs('rejected')
 
     for number in numbers:
-        send_sms(number, "Unfortunetly the shift was assigned to another staff number. Thank you for applying, we appreciate it.")
+        sendSMS(number, "Unfortunetly the shift was assigned to another staff number. Thank you for applying, we appreciate it.")
 
     return jsonify(status='success'), 200
 
 def defaultResponse(sender):
-    send_sms(sender, "Unrecognized command. Please send a valid response:\nACCEPT <RequestID>")
+    logging.info("Sending SMS message back to user, concerning Unrecognized command")
+
+    sendSMS(sender, "Unrecognized command. Please send a valid response:\nACCEPT <RequestID>")
     return jsonify(status='success'), 200
 
 
-def confirmationMessage(sender):
+def confirmationMessage(sender,currentBids,dateTime):
     #Needs to Updated with DB INFO
-    send_sms(sender, "Thank you for applying for the shift. There are {5} other staff members who have applied as well.\nYou will be notified at {DATE-TIME} on the results.")
+    logging.info("Sending corfirmation SMS message back to user")
+
+    sendSMS(sender, "Thank you for applying for the shift. There are "+currentBids+" other staff members who have applied as well.\nYou will be notified at "+ dateTime+" on the results.")
     return jsonify(status='success'), 200
 
 

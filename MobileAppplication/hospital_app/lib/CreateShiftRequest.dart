@@ -164,6 +164,27 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage> {
       ),
     );
   }
+  bool _validateDateTimeFields() {
+
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a date')));
+      return false;
+    }
+    if (_selectedFromTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a from time')));
+      return false;
+    }
+    if (_selectedToTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a to time')));
+      return false;
+    }
+    if (_replyDeadline == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please set a Respond By Date and Time')));
+      return false;
+    }
+
+    return true;
+  }
 
 
 
@@ -209,10 +230,11 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage> {
           ),
         ),
         onPressed: () {
-          logger.info("Submitted Request SMS sent");
 
 
-          if (_formKey.currentState!.validate()) {
+          if (_formKey.currentState!.validate()&&_validateDateTimeFields()) {
+            logger.info("Submitted Request SMS sent");
+
             _formKey.currentState!.save();
             _sendShiftRequest();
           }
