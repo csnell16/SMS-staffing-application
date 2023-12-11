@@ -224,7 +224,7 @@ class _OpenShiftsListPageState extends State<OpenShiftsListPage> {
       }
       else {
       logger.severe('Server error: ${response.body}');
-      _showErrorDialog('Server error', 'Failed to fetch shift requests. Please try again later.');
+      _showErrorDialog('Server error', 'Failed to cancel shift requests. Please try again later.');
      }
     }
    catch (e) {

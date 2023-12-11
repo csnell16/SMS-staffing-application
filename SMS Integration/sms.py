@@ -289,6 +289,7 @@ def acceptMessage(message, sender):
 
 def scheduleShiftMessages(respondByDateTime,requestID):
     logging.info("Scheduling Messages")
+    respondByDateTime = datetime(2023, 12, 10, 15, 30)#When testing to teh datetime+10min fromNow
 
     scheduler.add_job(shiftWinnerMessage, 'date', run_date=respondByDateTime, args=[requestID])
     scheduler.add_job(rejectionMessage, 'date', run_date=respondByDateTime)
