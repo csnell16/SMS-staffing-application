@@ -33,7 +33,6 @@ logging.getLogger('').addHandler(handler)
 
 
 
-
 def getPhoneNumbersOfAvailableStaffs(list_type):
     logging.info("Acquiring phone Numbers from DB")
 
@@ -198,7 +197,7 @@ def shiftCreate():
     from_time = data.get('fromTime', 'Default From Time')
     to_time = data.get('toTime', 'Default To Time')
 
-    requestID = generateUniqueRequestId()  #Placeholder for the actual function to generate unique ID
+    requestID = generateUniqueRequestId()
 
     messageBody = (f"You have received a Shift Position:\n"
                     f"To accept request respond with:\nACCEPT {requestID}\n\n"
@@ -312,7 +311,7 @@ def scheduleShiftMessages(respondByDateTime,requestID):
 
 
 def shiftWinnerMessage(requestID):
-    #Needs to Updated with DB INFO using requestID#############################
+    #Needs to Updated with DB INFO using Given RequestID#############################
 
 
     position ="Doctor" #data.get('position')
@@ -356,7 +355,6 @@ def defaultResponse(sender):
 
 
 def confirmationMessage(sender,currentBids,dateTime):
-    #Needs to Updated with DB INFO
     logging.info("Sending corfirmation SMS message back to user")
 
     sendSMS(sender, "Thank you for applying for the shift. There are "+currentBids+" other staff members who have applied as well.\nYou will be notified at "+ dateTime+" on the results.")
