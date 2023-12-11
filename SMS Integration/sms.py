@@ -198,7 +198,7 @@ def shiftCreate():
     from_time = data.get('fromTime', 'Default From Time')
     to_time = data.get('toTime', 'Default To Time')
 
-    requestID = generate_unique_request_id()  #Placeholder for the actual function to generate unique ID
+    requestID = generateUniqueRequestId()  #Placeholder for the actual function to generate unique ID
 
     messageBody = (f"You have received a Shift Position:\n"
                     f"To accept request respond with:\nACCEPT {requestID}\n\n"
@@ -217,15 +217,12 @@ def shiftCreate():
     return jsonify({'status': 'success', 'message': 'Shift request sent successfully.'}), 200
 
 
+def generateUniqueRequestId(length=8):
+    unique_id = uuid.uuid4()
+    int_id = int(unique_id.int)
+    numeric_id = str(int_id)[:length]
 
-
-def generate_unique_request_id():
-    unique_string = str(uuid.uuid4())
-    hash_object = hashlib.sha256(unique_string.encode())
-    hex_dig = hash_object.hexdigest()
-    return hex_dig[:6]  # Taking the first 6 characters
-
-
+    return numeric_id
 
 
 
