@@ -1,5 +1,5 @@
 import sqlite3
-from enum import Enum
+from enum import Enum, auto
 
 class Notifications(Enum):
     ON = 0
@@ -9,20 +9,90 @@ class ShiftStatus(Enum):
     PENDING = 0
     ASSIGNED = 1
 
+class DistributionStatus(Enum):
+    PENDING = 0
+    ASSIGNED = 1
+
+class TableColumns(Enum):
+    employeeID = auto()
+    phone = auto()
+    email = auto()
+    notifications = auto()
+
+    shiftID = auto()
+    position = auto()
+    startDateTime = auto()
+    endDateTime = auto
+    executionTime = auto()
+    status = auto()
+    assignee = auto()
+
+    date = auto()
+    
+    distributionOrder = auto()
+
+class TableColumnsFull(Enum):
+    FULL_EMPLOYEE = [TableColumns.employeeID.name, TableColumns.phone.name, TableColumns.email.name, TableColumns.notifications.name]
+    FULL_SHIFT = [TableColumns.shiftID.name, TableColumns.position.name, TableColumns.startDateTime.name, TableColumns.endDateTime.name, TableColumns.executionTime.name, TableColumns.status.name, TableColumns.assignee.name]
+    FULL_AVAILABILITY = [TableColumns.employeeID.name, TableColumns.date.name]
+    FULL_BID = [TableColumns.employeeID.name, TableColumns.shiftID.name]
+
+class FetchType(Enum):
+    NONE = 0
+    ONE = 1
+    ALL = 2
+
+class ItemNotFound(Exception):
+    pass
+
+
 DATABASE_FILE = './database.db'
 
-connection = sqlite3.connect(DATABASE_FILE)
-cursor = connection.cursor()
+def queryHelper(query, dataObj={}, fetchType=FetchType.NONE.value):
+    # opens a db connection and executes a query
+    connection = sqlite3.connect(DATABASE_FILE)
+    cursor = connection.cursor()
+    # enable foreign key support
+    cursor.execute('PRAGMA foreign_keys = ON')
+    connection.commit()
 
-# enable foreign key support
-cursor.execute('PRAGMA foreign_keys = ON')
-connection.commit()
+    # will still throw exceptions
+    res = None
+    if fetchType  == FetchType.ONE.value:
+        res = cursor.execute(query, dataObj).fetchone()
+    elif fetchType == FetchType.ALL.value:
+        res = cursor.execute(query, dataObj).fetchall()
+    else:
+        cursor.execute(query, dataObj)
+    connection.commit()
+
+    cursor.close()
+    connection.close()
+    return res
+
+def tupleToDict(tup, dictKeys):
+    # turns a tuple into a dictionary with keys in the order given
+    # tuple and keys list should have equal length
+    dic = {}
+    for i in range(len(tup)):
+        dic[dictKeys[i]] = tup[i]
+    return dic
+
+def listTupleToDict(ls, dictKeys):
+    # turns a list of tuples into a list of dictionaries with keys in the order given
+    # tuple and keys list should have equal length
+    return [tupleToDict(tup, dictKeys) for tup in ls]
+
+def listTupleToValue(ls):
+    # turns a list of tuples into a list of dictionaries with keys in the order given
+    # tuple and keys list should have equal length
+    return [tup[0] for tup in ls]
 
 def initialize_tables():
     # intialize the tables if they have not already been created
     
     # Employees table
-    cursor.execute(f'''CREATE TABLE IF NOT EXISTS employees(
+    queryHelper(f'''CREATE TABLE IF NOT EXISTS employees(
                 employeeID TEXT PRIMARY KEY,
                 phone TEXT,
                 email TEXT,
@@ -30,9 +100,11 @@ def initialize_tables():
                 )''')
 
     # Shifts table
-    cursor.execute(f'''CREATE TABLE IF NOT EXISTS shifts(
+    queryHelper(f'''CREATE TABLE IF NOT EXISTS shifts(
                 shiftID INTEGER PRIMARY KEY AUTOINCREMENT,
-                shiftDateTime TEXT,
+                position TEXT,
+                startDateTime TEXT,
+                endDateTime TEXT,
                 executionTime TEXT,
                 status INTEGER DEFAULT {ShiftStatus.PENDING.value},
                 assignee TEXT DEFAULT NULL,
@@ -40,7 +112,7 @@ def initialize_tables():
                 )''')
 
     # Availability table
-    cursor.execute('''CREATE TABLE IF NOT EXISTS availability(
+    queryHelper('''CREATE TABLE IF NOT EXISTS availability(
                 employeeID TEXT NOT NULL,
                 date TEXT,
                 FOREIGN KEY(employeeID) REFERENCES employees(employeeID) ON UPDATE CASCADE,
@@ -48,7 +120,7 @@ def initialize_tables():
                 )''')
 
     # Bids table
-    cursor.execute('''CREATE TABLE IF NOT EXISTS bids(
+    queryHelper('''CREATE TABLE IF NOT EXISTS bids(
                 employeeID TEXT NOT NULL,
                 shiftID TEXT NOT NULL,
                 FOREIGN KEY(employeeID) REFERENCES employees(employeeID) ON UPDATE CASCADE,
@@ -56,180 +128,187 @@ def initialize_tables():
                 PRIMARY KEY (employeeID, shiftID)
                 )''')
     
-    connection.commit()
+    # Distribution table
+    queryHelper(f'''CREATE TABLE IF NOT EXISTS distribution(
+                employeeID TEXT NOT NULL,
+                distOrder INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+                distStatus INTEGER DEFAULT {DistributionStatus.PENDING.value},
+                FOREIGN KEY(employeeID) REFERENCES employees(employeeID) ON UPDATE CASCADE
+                )''')
+    
+    # # Distribution table trigger
+    queryHelper(f'''CREATE TRIGGER IF NOT EXISTS distTrigger
+                AFTER INSERT ON employees
+                BEGIN
+                    INSERT INTO distribution (employeeID) VALUES (NEW.employeeID);
+                END''')
 
 # db insert functions
 def insert_employee(employeeID, phone, email, notifications=Notifications.ON.value):
-    cursor.execute('INSERT OR IGNORE INTO employees VALUES (?, ?, ?, ?)', (employeeID, phone, email, notifications))
-    connection.commit()
+    queryHelper('INSERT INTO employees VALUES (?, ?, ?, ?)', (employeeID, phone, email, notifications))
 
-def insert_shift(shiftDateTime, executionTime):
-    cursor.execute('INSERT INTO shifts (shiftDateTime, executionTime) VALUES (?, ?)', (shiftDateTime, executionTime))
-    connection.commit()
+def insert_shift(position, startDateTime, endDateTime, executionTime):
+    queryHelper('INSERT INTO shifts (position, startDateTime, endDateTime, executionTime) VALUES (?, ?, ?, ?)', (position, startDateTime, endDateTime, executionTime))
 
 def insert_availability(employeeID, date):
-    cursor.execute('INSERT OR IGNORE INTO availability VALUES (?, ?)', (employeeID, date))
-    connection.commit()
+    queryHelper('INSERT INTO availability VALUES (?, ?)', (employeeID, date))
 
 def insert_bid(employeeID, shiftID):
-    cursor.execute('INSERT OR IGNORE INTO bids VALUES (?, ?)', (employeeID, shiftID))
-    connection.commit()
+    queryHelper('INSERT INTO bids VALUES (?, ?)', (employeeID, shiftID))
 
 # db update functions
 def update_employee_employeeID(employeeID, newID):
-    cursor.execute('''UPDATE employees
+    queryHelper('''UPDATE employees
                    SET employeeID = :newID
                    WHERE employeeID = :employeeID''',
                    {'employeeID': employeeID, 'newID': newID})
-    connection.commit()
 
 def update_employee_phone(employeeID, phone):
-    cursor.execute('''UPDATE employees
+    queryHelper('''UPDATE employees
                    SET phone = :phone
                    WHERE employeeID = :employeeID''',
                    {'employeeID': employeeID, 'phone': phone})
-    connection.commit()
 
 def update_employee_email(employeeID, email):
-    cursor.execute('''UPDATE employees
+    queryHelper('''UPDATE employees
                    SET email = :email
                    WHERE employeeID = :employeeID''',
                    {'employeeID': employeeID, 'email': email})
-    connection.commit()
 
 def update_employee_notifications(employeeID, notifications):
-    cursor.execute('''UPDATE employees
+    queryHelper('''UPDATE employees
                    SET notifications = :notifications
                    WHERE employeeID = :employeeID''',
                    {'employeeID': employeeID, 'notifications': notifications})
-    connection.commit()
 
 def update_shift_status(shiftID, status):
-    cursor.execute('''UPDATE shifts
+    queryHelper('''UPDATE shifts
                    SET status = :status
                    WHERE shiftID = :shiftID''',
                    {'shiftID': shiftID, 'status': status})
-    connection.commit()
 
 def update_shift_assignee(shiftID, assignee):
-    cursor.execute('''UPDATE shifts
+    queryHelper('''UPDATE shifts
                    SET assignee = :assignee
                    WHERE shiftID = :shiftID''',
                    {'shiftID': shiftID, 'assignee': assignee})
-    connection.commit()
 
 def update_shift_assign_shift(shiftID, assignee, status=ShiftStatus.ASSIGNED.value):
-    cursor.execute('''UPDATE shifts
+    queryHelper('''UPDATE shifts
                    SET assignee = :assignee, status = :status
                    WHERE shiftID = :shiftID''',
                    {'shiftID': shiftID, 'assignee': assignee, 'status': status})
-    connection.commit()
 
 # db delete functions
 def delete_availability(employeeID, date):
-    cursor.execute('DELETE FROM availability WHERE employeeID = :employeeID AND date = :date',
+    queryHelper('DELETE FROM availability WHERE employeeID = :employeeID AND date(date) = date(:date)',
                    {'employeeID': employeeID, 'date': date})
-    connection.commit()
 
 def delete_bid(employeeID, shiftID):
-    cursor.execute('DELETE FROM bids WHERE employeeID = :employeeID AND shiftID = :shiftID',
+    queryHelper('DELETE FROM bids WHERE employeeID = :employeeID AND shiftID = :shiftID',
                    {'employeeID': employeeID, 'shiftID': shiftID})
-    connection.commit()
 
 # db read functions
 def read_employee(employeeID):
     # get employee by ID
-    res = cursor.execute('SELECT * FROM employees WHERE employeeID = :employeeID',
-                   {'employeeID': employeeID})
-    connection.commit()
-    return res.fetchone()
+    res = queryHelper('SELECT * FROM employees WHERE employeeID = :employeeID',
+                   {'employeeID': employeeID},
+                   FetchType.ONE.value)
+    if res is None:
+        raise ItemNotFound
+    return tupleToDict(res, TableColumnsFull.FULL_EMPLOYEE.value)
 
 def read_employee_phone(employeeID):
-    res = cursor.execute('SELECT phone FROM employees WHERE employeeID = :employeeID',
-                   {'employeeID': employeeID})
-    connection.commit()
-    return res.fetchone()
+    res = queryHelper('SELECT phone FROM employees WHERE employeeID = :employeeID',
+                   {'employeeID': employeeID},
+                   FetchType.ONE.value)
+    if res is None:
+        raise ItemNotFound
+    return tupleToDict(res, [TableColumns.phone.name])
 
 def read_employee_email(employeeID):
-    res = cursor.execute('SELECT email FROM employees WHERE employeeID = :employeeID',
-                   {'employeeID': employeeID})
-    connection.commit()
-    return res.fetchone()
+    res = queryHelper('SELECT email FROM employees WHERE employeeID = :employeeID',
+                   {'employeeID': employeeID},
+                   FetchType.ONE.value)
+    if res is None:
+        raise ItemNotFound
+    return tupleToDict(res, [TableColumns.email.name])
 
 def read_employee_notifications(employeeID):
-    res = cursor.execute('SELECT notifications FROM employees WHERE employeeID = :employeeID',
-                   {'employeeID': employeeID})
-    connection.commit()
-    return res.fetchone()
+    res = queryHelper('SELECT notifications FROM employees WHERE employeeID = :employeeID',
+                   {'employeeID': employeeID},
+                   FetchType.ONE.value)
+    if res is None:
+        raise ItemNotFound
+    return tupleToDict(res, [TableColumns.notifications.name])
 
 def read_shift(shiftID):
     # get shift by id
-    res = cursor.execute('SELECT * FROM shifts WHERE shiftID = :shiftID',
-                   {'shiftID': shiftID})
-    connection.commit()
-    return res.fetchone()
+    res = queryHelper('SELECT * FROM shifts WHERE shiftID = :shiftID',
+                   {'shiftID': shiftID},
+                   FetchType.ONE.value)
+    if res is None:
+        raise ItemNotFound
+    return tupleToDict(res, TableColumnsFull.FULL_SHIFT.value)
 
 def read_shifts_by_assignee(assignee):
     # get all shifts by a specified assignee, assignee is null when unassigned
-    res = cursor.execute('SELECT * FROM shifts WHERE assignee IS :assignee',
-                   {'assignee': assignee})
-    connection.commit()
-    return res.fetchall()
+    res = queryHelper('SELECT * FROM shifts WHERE assignee IS :assignee',
+                   {'assignee': assignee},
+                   FetchType.ALL.value)
+    return listTupleToDict(res, TableColumnsFull.FULL_SHIFT.value)
 
 def read_shifts_unassigned():
     # get all shifts that are unassigned, regardless of status
-    res = cursor.execute('SELECT * FROM shifts WHERE assignee IS :assignee',
-                   {'assignee': None})
-    connection.commit()
-    return res.fetchall()
+    res = queryHelper('SELECT * FROM shifts WHERE assignee IS :assignee',
+                   {'assignee': None},
+                   FetchType.ALL.value)
+    return listTupleToDict(res, TableColumnsFull.FULL_SHIFT.value)
 
-def read_pending_shifts():
+def read_shifts_pending():
     # get all shifts with pending status
-    res = cursor.execute('SELECT * FROM shifts WHERE status IS :status',
-                   {'status': ShiftStatus.PENDING.value})
-    connection.commit()
-    return res.fetchall()
+    res = queryHelper('SELECT * FROM shifts WHERE status IS :status',
+                   {'status': ShiftStatus.PENDING.value},
+                   FetchType.ALL.value)
+    return listTupleToDict(res, TableColumnsFull.FULL_SHIFT.value)
 
 def read_shifts_pending_past_execution():
     # get all pending shifts past execution time
-    res = cursor.execute('''SELECT * FROM shifts WHERE status IS :status
+    res = queryHelper('''SELECT * FROM shifts WHERE status IS :status
                          AND datetime(executionTime) <= datetime('now')''',
-                         {'status': ShiftStatus.PENDING.value})
-    connection.commit()
-    return res.fetchall()
+                         {'status': ShiftStatus.PENDING.value},
+                         FetchType.ALL.value)
+    return listTupleToDict(res, TableColumnsFull.FULL_SHIFT.value)
 
 def read_availability_by_employee_and_month(employeeID, month):
     # get an employees availability for a specified month 'yyyy-mm'
-    res = cursor.execute('''SELECT * FROM availability WHERE employeeID = :employeeID
-                         AND strftime('%Y-%m', date) = :month''',
-                         {'employeeID': employeeID, 'month': month})
-    connection.commit()
-    return res.fetchall()
+    res = queryHelper('''SELECT date FROM availability WHERE employeeID = :employeeID
+                         AND strftime('%Y-%m', date) = :month
+                         ORDER BY date ASC''',
+                         {'employeeID': employeeID, 'month': month},
+                         FetchType.ALL.value)
+    return listTupleToValue(res)
 
 def read_availability_by_day(day):
     # get all available employees on a specified day 'yyyy-mm-dd'
-    res = cursor.execute('''SELECT * FROM availability WHERE
+    res = queryHelper('''SELECT employeeID FROM availability WHERE
                          date(date) = :day''',
-                         {'day': day})
-    connection.commit()
-    return res.fetchall()
+                         {'day': day},
+                         FetchType.ALL.value)
+    return listTupleToValue(res)
 
 def read_bids_employees_by_shift(shiftID):
     # get all employeeIDs by the given shiftID in the bid table
-    res = cursor.execute('SELECT employeeID FROM bids WHERE shiftID IS :shiftID',
-                   {'shiftID': shiftID})
-    connection.commit()
-    return res.fetchall()
+    res = queryHelper('SELECT employeeID FROM bids WHERE shiftID IS :shiftID',
+                   {'shiftID': shiftID},
+                   FetchType.ALL.value)
+    return listTupleToValue(res)
 
 def read_bids_shifts_by_employee(employeeID):
     # get all shiftIDs by the given employeeID in the bid table
-    res = cursor.execute('SELECT shiftID FROM bids WHERE employeeID IS :employeeID',
-                   {'employeeID': employeeID})
-    connection.commit()
-    return res.fetchall()
+    res = queryHelper('SELECT shiftID FROM bids WHERE employeeID IS :employeeID',
+                   {'employeeID': employeeID},
+                   FetchType.ALL.value)
+    return listTupleToValue(res)
 
 initialize_tables()
-
-# Do NOT close database, database connection is still run while being imported in the API
-# create database class to manage connections and refactor this behavior later
-# connection.close()
