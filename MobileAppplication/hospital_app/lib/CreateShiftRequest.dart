@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class CreateShiftRequestPage33 extends StatefulWidget {
+import 'package:logging/logging.dart';
+
+class CreateShiftRequestPage extends StatefulWidget {
+  const CreateShiftRequestPage({super.key});
+
   @override
   _CreateShiftRequestPageState createState() => _CreateShiftRequestPageState();
 }
 
-class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
+class _CreateShiftRequestPageState extends State<CreateShiftRequestPage> {
   final _formKey = GlobalKey<FormState>();
   String _position = '';
   DateTime _selectedDate = DateTime.now();
   DateTime? _replyDeadline;
   TimeOfDay? _selectedFromTime = TimeOfDay.now();
   TimeOfDay? _selectedToTime;
+  final Logger logger = Logger('CreateShiftRequestLogger');
 
   @override
   Widget build(BuildContext context) {
@@ -20,24 +28,15 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Create Shift Request',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize:22,color: Colors.white,fontWeight: FontWeight.bold,fontFamily:'Proxima Nova'),
 
         ),
-        // backgroundColor: Colors.deepPurple, // Updated color
-        elevation: 4, // Shadow under the AppBar
-        // actions: <Widget>[
-        //   IconButton(
-        //     icon: Icon(Icons.settings), // Example icon
-        //     onPressed: () {
-        //       // Action for settings or other functionality
-        //     },
-        //   ),
-        // ],
+        elevation: 4,
         flexibleSpace: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -54,7 +53,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
         width: screenWidth,
         height: screenHeight,
 
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -73,7 +72,7 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   _buildTextField('Position', (value) => _position = value!, screenWidth, screenHeight),
-                  _buildDateTimePicker('Selected Date', '${_selectedDate.toLocal().toString().split(' ')[0]}', () => _selectDate(context, true), screenWidth, screenHeight),
+                  _buildDateTimePicker('Selected Date', _selectedDate.toLocal().toString().split(' ')[0], () => _selectDate(context, true), screenWidth, screenHeight),
                   _buildTimePickerRow(screenWidth, screenHeight),
                   _buildDateTimePicker(
                     'Respond By',
@@ -96,9 +95,9 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
     return Padding(
       padding: EdgeInsets.only(top: screenHeight * 0.02,bottom: screenHeight * 0.1),
       child: TextFormField(
-        cursorColor: Color(0xFF630f0b),
+        cursorColor: const Color(0xFF630f0b),
         textAlign: TextAlign.left,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 19,
           color: Colors.white,
           fontWeight: FontWeight.bold,
@@ -107,19 +106,19 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
 
         decoration: InputDecoration(
 
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white), // Default border color
+          enabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white), // Border color when the field is selected
+          focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white),
           ),
           labelText: label,
-          labelStyle: TextStyle(
+          labelStyle: const TextStyle(
 
-            color: Colors.white, // Example color
-            fontSize: 18, // Example font size
-            fontWeight: FontWeight.bold, // Example font weight
-            fontFamily: 'Proxima Nova', // Example font family
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Proxima Nova',
           ),
           border: const OutlineInputBorder(),
           contentPadding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenHeight * 0.03),
@@ -140,29 +139,51 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
         child: InputDecorator(
           decoration: InputDecoration(
             labelText: label,
-            labelStyle: TextStyle(
+            labelStyle: const TextStyle(
               color: Colors.white, // Example color
               fontSize: 16, // Example font size
               fontWeight: FontWeight.bold, // Example font weight
               fontFamily: 'Proxima Nova', // Example font family
             ),
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03, vertical: screenHeight * 0.01),
           ),
           child: Text(
             value,
             textAlign: TextAlign.left,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18,
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontFamily: 'Proxima Nova',
             ),
             overflow: TextOverflow.ellipsis,
+
           ),
         ),
       ),
     );
+  }
+  bool _validateDateTimeFields() {
+
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a date')));
+      return false;
+    }
+    if (_selectedFromTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a from time')));
+      return false;
+    }
+    if (_selectedToTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a to time')));
+      return false;
+    }
+    if (_replyDeadline == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please set a Respond By Date and Time')));
+      return false;
+    }
+
+    return true;
   }
 
 
@@ -196,11 +217,10 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       padding: EdgeInsets.symmetric(vertical: screenHeight * 0.1),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF0a0a0a),
+          backgroundColor: const Color(0xFF0a0a0a),
           elevation: 0,
           alignment: Alignment.center,
-          // textStyle: ,
-          foregroundColor: Color(0xFF820f09),
+          foregroundColor: const Color(0xFF820f09),
           // visualDensity:const VisualDensity(horizontal: .8,vertical: .8) ,
           // shadowColor: Color(0xFF820f09),
 
@@ -210,8 +230,14 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
           ),
         ),
         onPressed: () {
-          print("Submitted Request SMS sent");
-          // Rest of the code remains the same
+
+
+          if (_formKey.currentState!.validate()&&_validateDateTimeFields()) {
+            logger.info("Submitted Request SMS sent");
+
+            _formKey.currentState!.save();
+            _sendShiftRequest();
+          }
         },
         child: const Text('Submit Request  ',
             textAlign: TextAlign.left,
@@ -225,14 +251,14 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Shift Request Created'),
+        title: const Text('Shift Request Created'),
         content: Text('Position: $_position\nDate: ${_selectedDate.toLocal().toString().split(' ')[0]}\nFrom Time: ${_selectedFromTime?.format(context)}\nTo Time: ${_selectedToTime?.format(context)}\nReply Deadline: ${_replyDeadline?.toLocal().toString().split(' ')[0]}'),
         actions: <Widget>[
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: Text('OK'),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -244,14 +270,12 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
     }
     return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
-
   Future<void> _selectDateTime(BuildContext context, bool isShiftDate) async {
     DateTime initialDate = isShiftDate ? _selectedDate : (_replyDeadline ?? DateTime.now());
     TimeOfDay initialTime = isShiftDate
         ? TimeOfDay.fromDateTime(_selectedDate)
         : (_replyDeadline != null ? TimeOfDay.fromDateTime(_replyDeadline!) : TimeOfDay.now());
 
-    // First, pick the date
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -260,14 +284,12 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
     );
 
     if (pickedDate != null) {
-      // If a date is picked, proceed to pick the time
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
         initialTime: initialTime,
       );
 
       if (pickedTime != null) {
-        // Combine the picked date and time into a single DateTime
         final DateTime combinedDateTime = DateTime(
           pickedDate.year,
           pickedDate.month,
@@ -275,6 +297,15 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
           pickedTime.hour,
           pickedTime.minute,
         );
+
+        if (!isShiftDate && combinedDateTime.isAfter(_selectedDate)) {
+          // Clear the reply deadline and show a warning message
+          setState(() {
+            _replyDeadline = null;
+          });
+          _showInvalidDateWarning();
+          return;
+        }
 
         setState(() {
           if (isShiftDate) {
@@ -287,7 +318,6 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
     }
   }
 
-
   _selectDate(BuildContext context, bool isShiftDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -296,6 +326,13 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       lastDate: DateTime(2025),
     );
     if (picked != null) {
+      if (!isShiftDate && picked.isAfter(_selectedDate)) {
+        setState(() {
+          _replyDeadline = null;
+        });
+        _showInvalidDateWarning();
+        return;
+      }
       setState(() {
         if (isShiftDate) {
           _selectedDate = picked;
@@ -305,6 +342,26 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       });
     }
   }
+
+  void _showInvalidDateWarning() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Invalid Date'),
+        content: const Text('Reply deadline cannot be after the shift start time.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   _selectTime(BuildContext context, bool isFromTime) async {
     final initialTime = isFromTime
         ? (_selectedFromTime ?? TimeOfDay.now())
@@ -325,5 +382,58 @@ class _CreateShiftRequestPageState extends State<CreateShiftRequestPage33> {
       });
     }
   }
+  Future<Map<String, dynamic>> loadConfig() async {
+    final jsonString = await rootBundle.loadString('assets/config.json');
+    return json.decode(jsonString);
+  }
+  Future<void> _sendShiftRequest() async {
+    final config = await loadConfig();
+    final String apiEndpoint = config['api_endpoint'];
+
+    final url = Uri.parse('$apiEndpoint/shiftCreation');
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          'position': _position,
+          'selectedDate': _selectedDate.toIso8601String(),
+          'fromTime': _selectedFromTime?.format(context),
+          'toTime': _selectedToTime?.format(context),
+          'replyDeadline': _replyDeadline?.toIso8601String(),
+
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        logger.info("Successfully Created Shift Request");
+        _showConfirmationDialog();
+      } else {
+        logger.severe('Server error: ${response.body}');
+        _showErrorDialog('Server error', 'Failed to fetch shift requests. Please try again later.');
+      }
+    }
+    catch (e) {
+      logger.severe('Network error: $e');
+      _showErrorDialog('Network error', 'Failed to connect to the server. Please check your internet connection and try again.');
+
+    }
+  }
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
 }
