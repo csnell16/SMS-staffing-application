@@ -6,12 +6,19 @@ class Notifications(Enum):
     OFF = 1
 
 class ShiftStatus(Enum):
-    PENDING = 0
-    ASSIGNED = 1
+    PENDING = auto()
+    ASSIGNED = auto()
+    CANCELLED = auto()
+
+class BidStatus(Enum):
+    PENDING = auto()
+    ASSIGNED = auto()
+    SHIFT_CANCELLED = auto()
 
 class DistributionStatus(Enum):
-    PENDING = 0
-    ASSIGNED = 1
+    PENDING = auto()
+    ASSIGNED  = auto()
+    MANUALLY_PUSHED_BACK = auto()
 
 class TableColumns(Enum):
     employeeID = auto()
@@ -28,6 +35,8 @@ class TableColumns(Enum):
     assignee = auto()
 
     date = auto()
+
+    bidStatus = auto()
     
     distributionOrder = auto()
 
@@ -35,7 +44,7 @@ class TableColumnsFull(Enum):
     FULL_EMPLOYEE = [TableColumns.employeeID.name, TableColumns.phone.name, TableColumns.email.name, TableColumns.notifications.name]
     FULL_SHIFT = [TableColumns.shiftID.name, TableColumns.position.name, TableColumns.startDateTime.name, TableColumns.endDateTime.name, TableColumns.executionTime.name, TableColumns.status.name, TableColumns.assignee.name]
     FULL_AVAILABILITY = [TableColumns.employeeID.name, TableColumns.date.name]
-    FULL_BID = [TableColumns.employeeID.name, TableColumns.shiftID.name]
+    FULL_BID = [TableColumns.employeeID.name, TableColumns.shiftID.name, TableColumns.bidStatus.name]
 
 class FetchType(Enum):
     NONE = 0
@@ -106,7 +115,7 @@ def initialize_tables():
                 startDateTime TEXT,
                 endDateTime TEXT,
                 executionTime TEXT,
-                status INTEGER DEFAULT {ShiftStatus.PENDING.value},
+                status TEXT DEFAULT {ShiftStatus.PENDING.name},
                 assignee TEXT DEFAULT NULL,
                 FOREIGN KEY(assignee) REFERENCES employees(employeeID) ON UPDATE CASCADE
                 )''')
@@ -120,9 +129,10 @@ def initialize_tables():
                 )''')
 
     # Bids table
-    queryHelper('''CREATE TABLE IF NOT EXISTS bids(
+    queryHelper(f'''CREATE TABLE IF NOT EXISTS bids(
                 employeeID TEXT NOT NULL,
                 shiftID TEXT NOT NULL,
+                bidStatus TEXT DEFAULT {BidStatus.PENDING.name},
                 FOREIGN KEY(employeeID) REFERENCES employees(employeeID) ON UPDATE CASCADE,
                 FOREIGN KEY(shiftID) REFERENCES shifts(shiftID) ON UPDATE CASCADE,
                 PRIMARY KEY (employeeID, shiftID)
@@ -132,7 +142,7 @@ def initialize_tables():
     queryHelper(f'''CREATE TABLE IF NOT EXISTS distribution(
                 employeeID TEXT NOT NULL,
                 distOrder INTEGER PRIMARY KEY ASC AUTOINCREMENT,
-                distStatus INTEGER DEFAULT {DistributionStatus.PENDING.value},
+                distStatus TEXT DEFAULT {DistributionStatus.PENDING.name},
                 FOREIGN KEY(employeeID) REFERENCES employees(employeeID) ON UPDATE CASCADE
                 )''')
     
@@ -193,11 +203,19 @@ def update_shift_assignee(shiftID, assignee):
                    WHERE shiftID = :shiftID''',
                    {'shiftID': shiftID, 'assignee': assignee})
 
-def update_shift_assign_shift(shiftID, assignee, status=ShiftStatus.ASSIGNED.value):
+def update_shift_assign_shift(shiftID, assignee):
+    # updates assignee(employeeID) and status to assign
     queryHelper('''UPDATE shifts
                    SET assignee = :assignee, status = :status
                    WHERE shiftID = :shiftID''',
-                   {'shiftID': shiftID, 'assignee': assignee, 'status': status})
+                   {'shiftID': shiftID, 'assignee': assignee, 'status': ShiftStatus.ASSIGNED.name})
+
+def update_shift_cancel_shift(shiftID):
+    # cancel shift and unassign it
+    queryHelper('''UPDATE shifts
+                   SET assignee = :assignee, status = :status
+                   WHERE shiftID = :shiftID''',
+                   {'shiftID': shiftID, 'assignee': None, 'status': ShiftStatus.CANCELLED.name})
 
 # db delete functions
 def delete_availability(employeeID, date):
@@ -268,7 +286,7 @@ def read_shifts_unassigned():
 def read_shifts_pending():
     # get all shifts with pending status
     res = queryHelper('SELECT * FROM shifts WHERE status IS :status',
-                   {'status': ShiftStatus.PENDING.value},
+                   {'status': ShiftStatus.PENDING.name},
                    FetchType.ALL.value)
     return listTupleToDict(res, TableColumnsFull.FULL_SHIFT.value)
 
@@ -276,7 +294,21 @@ def read_shifts_pending_past_execution():
     # get all pending shifts past execution time
     res = queryHelper('''SELECT * FROM shifts WHERE status IS :status
                          AND datetime(executionTime) <= datetime('now')''',
-                         {'status': ShiftStatus.PENDING.value},
+                         {'status': ShiftStatus.PENDING.name},
+                         FetchType.ALL.value)
+    return listTupleToDict(res, TableColumnsFull.FULL_SHIFT.value)
+
+def read_shifts_assigned():
+    # get all shifts with assigned status
+    res = queryHelper('''SELECT * FROM shifts WHERE status IS :status''',
+                         {'status': ShiftStatus.ASSIGNED.name},
+                         FetchType.ALL.value)
+    return listTupleToDict(res, TableColumnsFull.FULL_SHIFT.value)
+
+def read_shifts_cancelled():
+    # get all shifts with cancelled status
+    res = queryHelper('''SELECT * FROM shifts WHERE status IS :status''',
+                         {'status': ShiftStatus.CANCELLED.name},
                          FetchType.ALL.value)
     return listTupleToDict(res, TableColumnsFull.FULL_SHIFT.value)
 

@@ -240,21 +240,37 @@ def update_shift_assignShift():
         shiftID = data['shiftID']
         assignee = data['assignee']
 
-        if 'status' in data:
-            status = data['status']
-            dbF.update_shift_assign_shift(shiftID, assignee, status)
-        else:
-            dbF.update_shift_assign_shift(shiftID, assignee)
+        dbF.update_shift_assign_shift(shiftID, assignee)
 
         res = make_response('Successfully assigned shift')
         res.status_code = 200
     except KeyError:
-        res = make_response('Request requires shiftID, assignee, (optional) status')
+        res = make_response('Request requires shiftID, assignee')
         res.status_code = 400
     except IntegrityError as err:
         resText = 'unchecked db error'
         if 'FOREIGN' in err.args[0]:
-            resText = 'employeeID does not exist'
+            resText = 'assignee employeeID does not exist'
+        res = make_response(resText)
+        res.status_code = 400
+    return res
+
+@app.route("/shifts/cancelShift", methods=['PUT'])
+def update_shift_cancelShift():
+    try:
+        data = request.get_json()
+
+        shiftID = data['shiftID']
+
+        dbF.update_shift_cancel_shift(shiftID)
+
+        res = make_response('Successfully cancelled shift')
+        res.status_code = 200
+    except KeyError:
+        res = make_response('Request requires shiftID')
+        res.status_code = 400
+    except IntegrityError:
+        resText = 'unchecked db error'
         res = make_response(resText)
         res.status_code = 400
     return res
@@ -421,6 +437,30 @@ def read_shifts_pending():
 def read_shifts_pending_past_execution():
     try:
         dbOutput = dbF.read_shifts_pending_past_execution()
+        res = make_response({"shiftList": dbOutput})
+        res.status_code = 200
+    except IntegrityError:
+        resText = 'unchecked db error'
+        res = make_response(resText)
+        res.status_code = 400
+    return res
+
+@app.route("/shifts/assigned", methods=['GET'])
+def read_shifts_assigned():
+    try:
+        dbOutput = dbF.read_shifts_assigned()
+        res = make_response({"shiftList": dbOutput})
+        res.status_code = 200
+    except IntegrityError:
+        resText = 'unchecked db error'
+        res = make_response(resText)
+        res.status_code = 400
+    return res
+
+@app.route("/shifts/cancelled", methods=['GET'])
+def read_shifts_cancelled():
+    try:
+        dbOutput = dbF.read_shifts_cancelled()
         res = make_response({"shiftList": dbOutput})
         res.status_code = 200
     except IntegrityError:
