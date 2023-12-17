@@ -76,44 +76,44 @@ def cancelShift():
 
 @app.route('/getOpenShiftRequests', methods=['GET'])
 def getOpenShiftRequests():
-    #Data From DB
+    #Data From DB needs to used instead
     logging.info("Sending list of all Open Shift Requests to App")
-
+    #Sample Data
     shift_requests = [
         {
             'requestID': "48464684",
 
             'position': "Doctor",
-            'date': "2023-12-01",  # ISO format date
+            'date': "2023-12-15",  # ISO format date
             'fromTime': "09:00",
             'toTime': "17:00",
-            'replyDeadline': "2023-11-25T17:30:00",  # ISO format datetime
+            'replyDeadline': "2023-12-10T17:30:00",  # ISO format datetime
             'currentBids': "5",
 
         },
         {
-            'requestID': "48464684",
+            'requestID': "73924728",
 
             'position': "Nurse",
-            'date': "2023-12-02",
-            'fromTime': "08:00",
-            'toTime': "16:00",
-            'replyDeadline': "2023-11-26T17:30:00",
-                        'currentBids': "55",
+            'date': "2023-12-22",
+            'fromTime': "15:00",
+            'toTime': "21:00",
+            'replyDeadline': "2023-12-20T13:00:00",
+                        'currentBids': "2",
 
         },
         {
-            'requestID': "48464684",
-            'position': "NeuroSurgeon",
-            'date': "2023-12-08",
+            'requestID': "02371346",
+            'position': "Patient care technician",
+            'date': "2023-12-26",
             'fromTime': "08:00",
             'toTime': "16:00",
-            'replyDeadline': "2023-12-2T17:30:00",
-                        'currentBids': "1",
+            'replyDeadline': "2023-12-21T09:30:00",
+                        'currentBids': "0",
 
         },
         {
-            'requestID': "48464684",
+            'requestID': "08879516",
             'position': "Physicist",
             'date': "2023-12-02",
             'fromTime': "08:00",
@@ -126,41 +126,41 @@ def getOpenShiftRequests():
 
 @app.route('/getScheduledShiftRequests', methods=['GET'])
 def getScheduledShiftRequests():
-    #Data From DB
+    #Data From DB needs to used instead
     logging.info("Sending list of all Scheduled Shift Requests to App")
-
+    #Sample Data
     shift_requests = [
         {
-            'position': "Doctor2",
-            'date': "2023-12-01",  
+            'position': "Nurse",
+            'date': "2023-12-11",  
             'fromTime': "09:00",
             'toTime': "17:00",
-            'assignedToName':'Hisham2'
+            'assignedToName':'Employee Name'
 
         },
         {
-            'position': "Nurse",
+            'position': "Doctor",
+            'date': "2023-12-11",
+            'fromTime': "08:00",
+            'toTime': "16:00",
+            'assignedToName':'Employee Name'
+
+
+        },
+        {
+            'position': "ER Nurse",
+            'date': "2023-12-15",
+            'fromTime': "18:00",
+            'toTime': "02:00",
+            'assignedToName':'Employee Name'
+
+        },
+        {
+            'position': "Physician ",
             'date': "2023-12-02",
             'fromTime': "08:00",
             'toTime': "16:00",
-            'assignedToName':'Hisham'
-
-
-        },
-        {
-            'position': "NeuroSurgeon",
-            'date': "2023-12-08",
-            'fromTime': "08:00",
-            'toTime': "16:00",
-            'assignedToName':'Hisham'
-
-        },
-        {
-            'position': "Physicist",
-            'date': "2023-12-02",
-            'fromTime': "08:00",
-            'toTime': "16:00",
-            'assignedToName':'Hisham'
+            'assignedToName':'Employee Name'
 
         },
 
@@ -318,10 +318,10 @@ def shiftWinnerMessage(requestID):
 
     logging.info("Sending messages to the person who recieved the shift")
 
-    position ="Doctor" #data.get('position')
-    selected_date ="5/12/2023" #data.get('selectedDate')
-    from_time = "07:00"#data.get('fromTime')
-    to_time = "19:00"#data.get('toTime')
+    position ="Nurse" #data.get('position')
+    selected_date ="20/12/2023" #data.get('selectedDate')
+    from_time = "09:00"#data.get('fromTime')
+    to_time = "17:00"#data.get('toTime')
 
     # Create the SMS message
     messageBody = (f"Shift Request ID: {requestID} has been confirmed\n"
