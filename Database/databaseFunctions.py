@@ -13,6 +13,7 @@ class ShiftStatus(Enum):
 class BidStatus(Enum):
     PENDING = auto()
     ASSIGNED = auto()
+    REJECTED = auto()
     SHIFT_CANCELLED = auto()
 
 class DistributionStatus(Enum):
@@ -158,13 +159,16 @@ def insert_employee(employeeID, phone, email, notifications=Notifications.ON.val
     queryHelper('INSERT INTO employees VALUES (?, ?, ?, ?)', (employeeID, phone, email, notifications))
 
 def insert_shift(position, startDateTime, endDateTime, executionTime):
-    queryHelper('INSERT INTO shifts (position, startDateTime, endDateTime, executionTime) VALUES (?, ?, ?, ?)', (position, startDateTime, endDateTime, executionTime))
+    res = queryHelper('''INSERT INTO shifts (position, startDateTime, endDateTime, executionTime) VALUES (?, ?, ?, ?) RETURNING  *''',
+                      (position, startDateTime, endDateTime, executionTime),
+                      FetchType.ONE.value)
+    return tupleToDict(res, TableColumnsFull.FULL_SHIFT.value)
 
 def insert_availability(employeeID, date):
     queryHelper('INSERT INTO availability VALUES (?, ?)', (employeeID, date))
 
 def insert_bid(employeeID, shiftID):
-    queryHelper('INSERT INTO bids VALUES (?, ?)', (employeeID, shiftID))
+    queryHelper('INSERT INTO bids (employeeID, shiftID) VALUES (?, ?)', (employeeID, shiftID))
 
 # db update functions
 def update_employee_employeeID(employeeID, newID):
@@ -216,6 +220,11 @@ def update_shift_cancel_shift(shiftID):
                    SET assignee = :assignee, status = :status
                    WHERE shiftID = :shiftID''',
                    {'shiftID': shiftID, 'assignee': None, 'status': ShiftStatus.CANCELLED.name})
+    # set bid status to cancelled for associated bids
+    queryHelper('''UPDATE bids
+                   SET bidStatus = :bidStatus
+                   WHERE shiftID = :shiftID''',
+                   {'shiftID': shiftID, 'bidStatus': BidStatus.SHIFT_CANCELLED.name})
 
 # db delete functions
 def delete_availability(employeeID, date):
@@ -329,12 +338,32 @@ def read_availability_by_day(day):
                          FetchType.ALL.value)
     return listTupleToValue(res)
 
+def read_availability_phone_by_day(day):
+    # get all phone numbers of employees that are available on the specified day 'yyyy-mm-dd'
+    res = queryHelper('''SELECT employees.employeeID, notifications, phone
+                      FROM employees
+                      JOIN availability
+                      ON employees.employeeID = availability.employeeID AND date(availability.date) = :day''',
+                         {'day': day},
+                         FetchType.ALL.value)
+    return listTupleToDict(res, [TableColumns.employeeID.name, TableColumns.notifications.name, TableColumns.phone.name])
+
 def read_bids_employees_by_shift(shiftID):
     # get all employeeIDs by the given shiftID in the bid table
     res = queryHelper('SELECT employeeID FROM bids WHERE shiftID IS :shiftID',
                    {'shiftID': shiftID},
                    FetchType.ALL.value)
     return listTupleToValue(res)
+
+def read_bids_employees_phone_by_shift(shiftID):
+    # get all IDs, notification settings, phone numbers, and the bid status of all employees for the given shiftID
+    res = queryHelper('''SELECT employees.employeeID, notifications, phone, bidStatus
+                      FROM employees
+                      JOIN bids
+                      ON employees.employeeID = bids.employeeID AND bids.shiftID = :shiftID''',
+                         {'shiftID': shiftID},
+                         FetchType.ALL.value)
+    return listTupleToDict(res, [TableColumns.employeeID.name, TableColumns.notifications.name, TableColumns.phone.name, TableColumns.bidStatus.name])
 
 def read_bids_shifts_by_employee(employeeID):
     # get all shiftIDs by the given employeeID in the bid table
