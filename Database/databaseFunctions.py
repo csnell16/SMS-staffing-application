@@ -67,17 +67,18 @@ def queryHelper(query, dataObj={}, fetchType=FetchType.NONE.value):
     connection.commit()
 
     # will still throw exceptions
-    res = None
-    if fetchType  == FetchType.ONE.value:
-        res = cursor.execute(query, dataObj).fetchone()
-    elif fetchType == FetchType.ALL.value:
-        res = cursor.execute(query, dataObj).fetchall()
-    else:
-        cursor.execute(query, dataObj)
-    connection.commit()
-
-    cursor.close()
-    connection.close()
+    try:
+        res = None
+        if fetchType  == FetchType.ONE.value:
+            res = cursor.execute(query, dataObj).fetchone()
+        elif fetchType == FetchType.ALL.value:
+            res = cursor.execute(query, dataObj).fetchall()
+        else:
+            cursor.execute(query, dataObj)
+        connection.commit()
+    finally:
+        cursor.close()
+        connection.close()
     return res
 
 def tupleToDict(tup, dictKeys):
