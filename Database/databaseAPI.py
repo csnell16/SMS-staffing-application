@@ -660,7 +660,7 @@ def sendSMS(sender, messageSend):
             from_=SEND_PHONE,
             to=sender
     )
-    logging.info("SMS Details:",message.sid,'Status:',message.status,'Date Sent:',message.date_sent)
+    logging.info(f"'SMS Details':{message.sid},'Status:'{message.status},'Date Sent:'{message.date_sent}")
 
 @app.route('/shiftCreation', methods=['POST'])
 def shiftCreate():
@@ -771,6 +771,7 @@ def shiftWinnerMessage(requestID):
         return
     except:
         logging.info(f"Unchecked error sending shift winner message")
+        return
 
     # Create the SMS message
     messageBody = (f"Shift Request ID: {requestID} has been confirmed\n"
@@ -792,7 +793,7 @@ def rejectionMessage(requestID):
     numbers=getPhoneNumbersOfAppliedStaff(requestID, 'rejected')
 
     for number in numbers:
-        sendSMS(number, "Unfortunetly the shift was assigned to another staff number. Thank you for applying, we appreciate it.")
+        sendSMS(number, "Unfortunately the shift was assigned to another staff number. Thank you for applying, we appreciate it.")
     logging.info("200, Success in Sending messgaes to rejected numbers for the shift")
 
 def defaultResponse(sender):
