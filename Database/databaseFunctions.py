@@ -1,23 +1,23 @@
 import sqlite3
 from enum import Enum, auto
 
-class Notifications(Enum):
+class Notifications(Enum): # Enum value
     ON = 0
     OFF = 1
 
-class ShiftStatus(Enum):
+class ShiftStatus(Enum): # Enum name
     PENDING = auto()
     ASSIGNED = auto()
     CANCELLED = auto()
     UNABLE_TO_ASSIGN = auto()
 
-class BidStatus(Enum):
+class BidStatus(Enum): # Enum name
     PENDING = auto()
     ASSIGNED = auto()
     REJECTED = auto()
     SHIFT_CANCELLED = auto()
 
-class DistributionStatus(Enum):
+class DistributionStatus(Enum): # Enum name
     PENDING = auto()
     ASSIGNED  = auto()
     MANUALLY_PUSHED_BACK = auto()
@@ -25,7 +25,7 @@ class DistributionStatus(Enum):
     FORCE_ASSIGNED = auto()
     OTHER = auto()
 
-class TableColumns(Enum):
+class TableColumns(Enum): # Enum name
     employeeID = auto()
     phone = auto()
     email = auto()
@@ -46,13 +46,13 @@ class TableColumns(Enum):
     distOrder = auto()
     distStatus = auto()
 
-class TableColumnsFull(Enum):
+class TableColumnsFull(Enum): # Enum value
     FULL_EMPLOYEE = [TableColumns.employeeID.name, TableColumns.phone.name, TableColumns.email.name, TableColumns.notifications.name]
     FULL_SHIFT = [TableColumns.shiftID.name, TableColumns.position.name, TableColumns.startDateTime.name, TableColumns.endDateTime.name, TableColumns.executionTime.name, TableColumns.status.name, TableColumns.assignee.name]
     FULL_AVAILABILITY = [TableColumns.employeeID.name, TableColumns.date.name]
     FULL_BID = [TableColumns.employeeID.name, TableColumns.shiftID.name, TableColumns.bidStatus.name]
 
-class FetchType(Enum):
+class FetchType(Enum): # Enum value
     NONE = 0
     ONE = 1
     ALL = 2
