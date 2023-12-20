@@ -730,33 +730,40 @@ def acceptMessage(message, sender):
         shift = dbF.read_shift(requestIDFromUser)
     except ItemNotFound:
         logging.info("Request ID given is not valid, Informed user to send a valid response")
-        sendSMS(sender, "Request ID given is not valid. Please send a valid response:\nACCEPT <RequestID>") # When the give RequestID is not found in DB
+        return sendSMS(sender, "Request ID given is not valid. Please send a valid response:\nACCEPT <RequestID>") # When the give RequestID is not found in DB
     except:
         logging.info("Unchecked error in acceptMessage")
+        return sendSMS(sender, "Backend error, please try again later")
 
     # check if shift is cancelled and respond accordingly
-    if(shift[dbF.TableColumns.status.name] != dbF.ShiftStatus.CANCELLED.name):
-        logging.info("Confirming to user that they have applied to shift")
-        currentBids = 0 # not available in DB query
-        notificationTime = shift[dbF.TableColumns.executionTime.name]
-        confirmationMessage(sender, currentBids, notificationTime)
-        respondByDateTime = datetime.fromisoformat(notificationTime) # needs to be in Datetime format, should acccept in this format
-        scheduleShiftMessages(respondByDateTime, requestIDFromUser)
-    else:
+    if(shift[dbF.TableColumns.status.name] == dbF.ShiftStatus.CANCELLED.name):
         logging.info("Informing user that RequestID shift has been canceled")
-        sendSMS(sender, "The Requested Shift has been canceled. Thank you for applying.")
+        return sendSMS(sender, "The Requested Shift has been canceled. Thank you for applying.")
+
+    # since shift is not cancelled, put a bid for the employee on the shift
+    # if there are multiple employees with the same phone, add them all to the shift
+    try:
+        employeeIDs = dbF.read_employees_by_phone(sender)
+        for employeeID in employeeIDs:
+            dbF.insert_bid(employeeID, requestIDFromUser)
+    except Exception as err:
+        if 'UNIQUE' in err.args[0]:
+            logging.info("Employee already applied")
+            return sendSMS(sender, f"You have already applied for shift {requestIDFromUser} at {shift[dbF.TableColumns.startDateTime.name]}")
+        elif 'FOREIGN' in err.args[0]:
+            # this should not occur at this point since requestIDs are validated and employeeIDs are from DB
+            logging.info("Verification error creating bid from phone")
+            return sendSMS(sender, f"Backend error, please try again later")
+        else:
+            logging.info("Unchecked error creating bid from phone")
+            return sendSMS(sender, f"Backend error, please try again later")
+
+    # bids are created
+    logging.info("Confirming to user that they have applied to shift")
+    currentBids = 0 # not available in DB query
+    notificationTime = shift[dbF.TableColumns.executionTime.name]
+    confirmationMessage(sender, currentBids, notificationTime)
     return jsonify(status='success'), 200
-
-
-def scheduleShiftMessages(respondByDateTime, requestID):
-    logging.info("Scheduling Messages")
-
-    # now = datetime.now()
-    # respondByDateTime = datetime.now() + timedelta(minutes=2)
-
-    scheduler.add_job(shiftWinnerMessage, 'date', run_date=respondByDateTime, args=[requestID])
-    scheduler.add_job(rejectionMessage, 'date', run_date=respondByDateTime, args=[requestID])
-    print(scheduler.get_jobs)
 
 def shiftWinnerMessage(requestID):
     logging.info("Sending messages to the person who recieved the shift")

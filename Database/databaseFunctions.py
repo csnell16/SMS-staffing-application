@@ -270,6 +270,13 @@ def read_employee_notifications(employeeID):
         raise ItemNotFound
     return tupleToDict(res, [TableColumns.notifications.name])
 
+def read_employees_by_phone(phone):
+    # get all employeeIDs associated to given phone number
+    res = queryHelper('SELECT employeeID FROM employees WHERE phone = :phone',
+                   {'phone': phone},
+                   FetchType.ALL.value)
+    return listTupleToValue(res)
+
 def read_shift(shiftID):
     # get shift by id
     res = queryHelper('SELECT * FROM shifts WHERE shiftID = :shiftID',
