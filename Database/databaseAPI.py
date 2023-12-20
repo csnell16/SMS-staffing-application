@@ -601,23 +601,28 @@ def cancelShift():
         logging.info(f"Shift {requestID} has been Successfully Canceled")
         return jsonify({'status': 'success', 'message': 'Shift request CANCELED successfully.'}), 200
 
+def bidCounter(shiftID):
+    return len(dbF.read_bids_employees_by_shift(shiftID))
+
 def formatShiftsForMobile(shift_list):
     # formats database output shift list for mobile app
     shift_requests = []
     for shift in shift_list:
+        requestID = shift[dbF.TableColumns.shiftID.name]
         date = datetime.fromisoformat(shift[dbF.TableColumns.startDateTime.name]).strftime('%Y-%m-%d')
         start = datetime.fromisoformat(shift[dbF.TableColumns.startDateTime.name]).strftime('%H:%M')
         end = datetime.fromisoformat(shift[dbF.TableColumns.endDateTime.name]).strftime('%H:%M')
         reply = datetime.fromisoformat(shift[dbF.TableColumns.executionTime.name]).strftime('%Y-%m-%d %H:%M:%S') # ISO format datetime
+        bidCount = bidCounter(requestID)
         newObj = {
-            'requestID': shift[dbF.TableColumns.shiftID.name],
+            'requestID': requestID,
             'position': shift[dbF.TableColumns.position.name],
             'date': date,
             'fromTime': start,
             'toTime': end,
             'replyDeadline': reply,
             'assignedToName': shift[dbF.TableColumns.assignee.name],
-            'currentBids': 0 # not available in DB function ATM
+            'currentBids': bidCount
         }
         shift_requests.append(newObj)
     return shift_requests
@@ -756,7 +761,11 @@ def acceptMessage(message, sender):
 
     # bids are created
     logging.info("Confirming to user that they have applied to shift")
-    currentBids = 0 # not available in DB query
+    # bid count
+    try:
+        currentBids = bidCounter(requestIDFromUser)
+    except:
+        currentBids = 0
     notificationTime = shift[dbF.TableColumns.executionTime.name]
     confirmationMessage(sender, currentBids, notificationTime)
     return jsonify(status='success'), 200
