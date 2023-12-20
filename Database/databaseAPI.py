@@ -602,7 +602,10 @@ def cancelShift():
         return jsonify({'status': 'success', 'message': 'Shift request CANCELED successfully.'}), 200
 
 def bidCounter(shiftID):
-    return len(dbF.read_bids_employees_by_shift(shiftID))
+    try:
+        return len(dbF.read_bids_employees_by_shift(shiftID))
+    except:
+        return 0
 
 def formatShiftsForMobile(shift_list):
     # formats database output shift list for mobile app
@@ -762,10 +765,7 @@ def acceptMessage(message, sender):
     # bids are created
     logging.info("Confirming to user that they have applied to shift")
     # bid count
-    try:
-        currentBids = bidCounter(requestIDFromUser)
-    except:
-        currentBids = 0
+    currentBids = bidCounter(requestIDFromUser)
     notificationTime = shift[dbF.TableColumns.executionTime.name]
     confirmationMessage(sender, currentBids, notificationTime)
     return jsonify(status='success'), 200
