@@ -73,6 +73,12 @@ import databaseFunctions as dbF
 # update_shift_assign_shift('3', 3, 0)
 
 
+# update_shift_assign_shift('14', 'pp2')
+# update_bids_winner('14', 'pp2')
+
+# update_shift_cancel_shift('14')
+# update_bids_cancelled_shift('14')
+
 # ************ DELETE TESTS ************
 # check availabilty that exists is deleted
 # check availabilty that does not exist or does not match is unaffected
@@ -149,6 +155,16 @@ import databaseFunctions as dbF
 # print(read_bids_employees_phone_by_shift('5'))
 # print(read_bids_employees_phone_by_shift('6'))
 # print(read_bids_employees_phone_by_shift('-3'))
+
+# ************ OTHER TESTS **************
+# print(read_distribution_by_shift_pending_bids('20'))
+# print(read_distribution_by_availability_date('2023-12-27'))
+# print(read_distribution_by_availability_date('2023-12-28'))
+# print(read_distribution_by_availability_date('2023-12-29'))
+# print(read_distribution_by_availability_date('2023-12-29 08:00:00'))
+# update_distribution_assign_reinsert('pp99', DistributionStatus.MANUALLY_PUSHED_BACK.name)
+# print(update_shift_auto_assign('20'))
+# print(update_shift_auto_assign('25', True))
 
 # ************ TEST DB SETUP ************
 

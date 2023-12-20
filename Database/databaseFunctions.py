@@ -9,6 +9,7 @@ class ShiftStatus(Enum):
     PENDING = auto()
     ASSIGNED = auto()
     CANCELLED = auto()
+    UNABLE_TO_ASSIGN = auto()
 
 class BidStatus(Enum):
     PENDING = auto()
@@ -20,6 +21,9 @@ class DistributionStatus(Enum):
     PENDING = auto()
     ASSIGNED  = auto()
     MANUALLY_PUSHED_BACK = auto()
+    AUTO_ASSIGNED = auto()
+    FORCE_ASSIGNED = auto()
+    OTHER = auto()
 
 class TableColumns(Enum):
     employeeID = auto()
@@ -39,7 +43,8 @@ class TableColumns(Enum):
 
     bidStatus = auto()
     
-    distributionOrder = auto()
+    distOrder = auto()
+    distStatus = auto()
 
 class TableColumnsFull(Enum):
     FULL_EMPLOYEE = [TableColumns.employeeID.name, TableColumns.phone.name, TableColumns.email.name, TableColumns.notifications.name]
@@ -145,6 +150,7 @@ def initialize_tables():
                 employeeID TEXT NOT NULL,
                 distOrder INTEGER PRIMARY KEY ASC AUTOINCREMENT,
                 distStatus TEXT DEFAULT {DistributionStatus.PENDING.name},
+                shiftID TEXT DEFAULT NULL,
                 FOREIGN KEY(employeeID) REFERENCES employees(employeeID) ON UPDATE CASCADE
                 )''')
     
@@ -208,12 +214,16 @@ def update_shift_assignee(shiftID, assignee):
                    WHERE shiftID = :shiftID''',
                    {'shiftID': shiftID, 'assignee': assignee})
 
-def update_shift_assign_shift(shiftID, assignee):
+def update_shift_assign_shift(shiftID, assignee, assignmentType=DistributionStatus.ASSIGNED.name):
     # updates assignee(employeeID) and status to assign
     queryHelper('''UPDATE shifts
                    SET assignee = :assignee, status = :status
                    WHERE shiftID = :shiftID''',
                    {'shiftID': shiftID, 'assignee': assignee, 'status': ShiftStatus.ASSIGNED.name})
+    # update bids
+    update_bids_winner(shiftID, assignee)
+    # update distribution
+    update_distribution_assign_reinsert(assignee, assignmentType, shiftID)
 
 def update_shift_cancel_shift(shiftID):
     # cancel shift and unassign it
@@ -221,7 +231,22 @@ def update_shift_cancel_shift(shiftID):
                    SET assignee = :assignee, status = :status
                    WHERE shiftID = :shiftID''',
                    {'shiftID': shiftID, 'assignee': None, 'status': ShiftStatus.CANCELLED.name})
-    # set bid status to cancelled for associated bids
+    # cancel bid status for related bids
+    update_bids_cancelled_shift(shiftID)
+
+def update_bids_winner(shiftID, winnerEmployeeID):
+    # updates bids such that the bid winner gets accepted and the rest are rejected
+    queryHelper('''UPDATE bids
+                   SET bidStatus =
+                        CASE WHEN employeeID = :winnerEmployeeID
+                            THEN :bidWin
+                            ELSE :bidLose
+                        END
+                   WHERE shiftID = :shiftID''',
+                   {'shiftID': shiftID, 'winnerEmployeeID': winnerEmployeeID, 'bidWin': BidStatus.ASSIGNED.name, 'bidLose': BidStatus.REJECTED.name})
+
+def update_bids_cancelled_shift(shiftID):
+    # set bid status to cancelled for related bids
     queryHelper('''UPDATE bids
                    SET bidStatus = :bidStatus
                    WHERE shiftID = :shiftID''',
@@ -380,4 +405,94 @@ def read_bids_shifts_by_employee(employeeID):
                    FetchType.ALL.value)
     return listTupleToValue(res)
 
+# db special/scheduling functions
+def update_distribution_assign_reinsert(employeeID, assignmentType, shiftID=None):
+    # validate distribution status
+    if assignmentType not in DistributionStatus.__members__.keys():
+        assignmentType = DistributionStatus.OTHER.name
+    # update previous distribution status for assignee
+    queryHelper('''UPDATE distribution
+                   SET distStatus = :distStatus, shiftID = :shiftID
+                   WHERE employeeID = :employeeID AND distStatus = :pending''',
+                   {'shiftID': shiftID, 'employeeID': employeeID, 'distStatus': assignmentType, 'pending': DistributionStatus.PENDING.name})
+    # re-insert assignee into distribution to put on back of list
+    queryHelper('INSERT INTO distribution (employeeID) VALUES (?)', (employeeID,))
+
+def read_distribution_by_shift_pending_bids(shiftID):
+    # gets the distribution list by the distribution order and filters by employees that have placed a bid
+    res = queryHelper('''SELECT distribution.employeeID
+                      FROM distribution
+                      RIGHT JOIN bids
+                      ON distribution.employeeID = bids.employeeID
+                      WHERE bids.shiftID = :shiftID
+                      AND distStatus = :distStatus
+                      ORDER BY distOrder ASC
+                      ''',
+                   {'shiftID': shiftID,'distStatus': DistributionStatus.PENDING.name},
+                   FetchType.ALL.value)
+    return listTupleToValue(res)
+
+def read_distribution_by_availability_date(date):
+    # gets the distribution list by the distribution order and filters by employees that have availability that date 'yyyy-mm-dd' or iso datetime
+    res = queryHelper('''SELECT distribution.employeeID
+                      FROM distribution
+                      RIGHT JOIN availability
+                      ON distribution.employeeID = availability.employeeID
+                      WHERE date(availability.date) = date(:date)
+                      AND distStatus = :distStatus
+                      ORDER BY distOrder ASC
+                      ''',
+                   {'date': date,'distStatus': DistributionStatus.PENDING.name},
+                   FetchType.ALL.value)
+    return listTupleToValue(res)
+
+def update_shift_auto_assign(shiftID, forceAssign=False):
+    # automatically process for assigning a shift based on the distribution list
+    # force assign allows employees available on shift day to be selected after bidders
+
+    shift = read_shift(shiftID)
+
+    # if shift is already assigned, return the assigned employeeID
+    if shift[TableColumns.status.name] == ShiftStatus.ASSIGNED.name:
+        return read_employee(shift[TableColumns.assignee.name])
+
+    # if shift was cancelled, return null
+    if shift[TableColumns.status.name] == ShiftStatus.CANCELLED.name:
+        return None
+
+    # if shift was previously marked unassignable by the auto-assigner, pass to try assigning again
+    if shift[TableColumns.status.name] == ShiftStatus.UNABLE_TO_ASSIGN.name:
+        pass
+
+    # first get distribution by pending bids
+    dist = read_distribution_by_shift_pending_bids(shiftID)
+
+    # if there are bids, assign to the first in the list
+    if len(dist) > 0:
+        assignee = dist[0]
+        # update shift, bidlist and distribution
+        update_shift_assign_shift(shiftID, assignee, DistributionStatus.AUTO_ASSIGNED.name)
+        return read_employee(assignee)
+
+    # if there were no bids to assign from then check forceAssign
+    if not forceAssign:
+        # when force assign is False, mark shift as 'unable to assign' and end without assigning
+        update_shift_status(shiftID, ShiftStatus.UNABLE_TO_ASSIGN.name)
+        return None
+
+    # When forceAssign is True, assign to the first in the distribution list that is available that day
+    dist = read_distribution_by_availability_date(shift[TableColumns.startDateTime.name])
+
+    # if there are employees available that date, assign to the first available in the distribution list
+    if len(dist) > 0:
+        assignee = dist[0]
+        # update shift, bidlist and distribution
+        update_shift_assign_shift(shiftID, assignee, DistributionStatus.FORCE_ASSIGNED.name)
+        return read_employee(assignee)
+
+    # if no one is available that date, mark as unable to assign
+    update_shift_status(shiftID, ShiftStatus.UNABLE_TO_ASSIGN.name)
+    return None
+
+# initialization calls
 initialize_tables()

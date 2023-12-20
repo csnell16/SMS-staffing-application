@@ -43,9 +43,10 @@ def create_shift():
         endDateTime = data['endDateTime']
         executionTime = data['executionTime']
         
-        dbF.insert_shift(position, startDateTime, endDateTime, executionTime)
+        shift = dbF.insert_shift(position, startDateTime, endDateTime, executionTime)
+        insertShiftIntoScheduler(shift)
 
-        res = make_response('Successfully created shift')
+        res = make_response(f'Successfully created shift with ID {shift[dbF.TableColumns.shiftID.name]}')
         res.status_code = 201
     except KeyError:
         res = make_response('Request requires position, startDateTime, endDateTime, executionTime (ISO time format)')
@@ -528,10 +529,6 @@ from twilio.rest import Client
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
 
-from apscheduler.schedulers.background import BackgroundScheduler
-scheduler = BackgroundScheduler(daemon=True)
-scheduler.start()
-
 # twilio credentials
 SEND_PHONE = ''
 account_sid = ''
@@ -573,6 +570,10 @@ def getPhoneNumbersOfAppliedStaff(requestID, list_filter):
             queriedPhones = [employee[dbF.TableColumns.phone.name] for employee in dataList
                              if employee[dbF.TableColumns.notifications.name] == dbF.Notifications.ON.value
                              and employee[dbF.TableColumns.bidStatus.name] == dbF.BidStatus.REJECTED.name]
+        elif list_filter == 'cancelled': # Query for numbers if shift was cancelled
+            queriedPhones = [employee[dbF.TableColumns.phone.name] for employee in dataList
+                             if employee[dbF.TableColumns.notifications.name] == dbF.Notifications.ON.value
+                             and employee[dbF.TableColumns.bidStatus.name] == dbF.BidStatus.SHIFT_CANCELLED.name]
         else: # Query for only winner staff phone numbers
             queriedPhones = [employee[dbF.TableColumns.phone.name] for employee in dataList
                              if employee[dbF.TableColumns.notifications.name] == dbF.Notifications.ON.value
@@ -581,11 +582,6 @@ def getPhoneNumbersOfAppliedStaff(requestID, list_filter):
     except:
         logging.info("Error acquiring applied phone Numbers from DB")
         return []
-
-# start scheduler
-with app.app_context():
-    if not scheduler.running:
-        scheduler.start()
 
 @app.route('/getCancelShift', methods=['POST'])
 def cancelShift():
@@ -765,7 +761,7 @@ def acceptMessage(message, sender):
     confirmationMessage(sender, currentBids, notificationTime)
     return jsonify(status='success'), 200
 
-def shiftWinnerMessage(requestID):
+def shiftWinnerMessage(requestID, shiftWinnerNumber):
     logging.info("Sending messages to the person who recieved the shift")
     try:
         shift = dbF.read_shift(requestID)
@@ -788,20 +784,21 @@ def shiftWinnerMessage(requestID):
                     f"To Time: {to_time}\n")
 
     # Send the message to each phone number
-    shiftWinnerNumber=getPhoneNumbersOfAppliedStaff(requestID, 'winner')
-
     for number in shiftWinnerNumber: # There should be just 1 number
         sendSMS(number, messageBody)
     logging.info("200, Success in Sending messages to the person who recieved the shift")
 
-def rejectionMessage(requestID):
+def rejectionMessage(requestID, numbers):
     logging.info("Sending messages to rejected numbers for the shift")
-
-    numbers=getPhoneNumbersOfAppliedStaff(requestID, 'rejected')
-
     for number in numbers:
-        sendSMS(number, "Unfortunately the shift was assigned to another staff number. Thank you for applying, we appreciate it.")
-    logging.info("200, Success in Sending messgaes to rejected numbers for the shift")
+        sendSMS(number, f"Unfortunately shift {requestID} was assigned to another staff number. Thank you for applying, we appreciate it.")
+    logging.info(f"200, Success in Sending messages to {len(numbers)} rejected numbers for shift {requestID}")
+
+def cancelMessage(requestID, numbers):
+    logging.info("Sending cancellation messages to applied numbers if request was cancelled")
+    for number in numbers:
+        sendSMS(number, f"Shift {requestID} has been cancelled. Thank you for applying, we appreciate it.")
+    logging.info(f"200, Success in sending cancellation messagess to {len(numbers)} numbers for shift {requestID}")
 
 def defaultResponse(sender):
     logging.info("Sending SMS message back to user, concerning Unrecognized command")
@@ -815,5 +812,67 @@ def confirmationMessage(sender, currentBids, dateTime):
     sendSMS(sender, "Thank you for applying for the shift. There are " + str(currentBids) + " other staff members who have applied as well.\nYou will be notified at " + str(dateTime) + " on the results.")
     return jsonify(status='success'), 200
 
+#################### ASSIGNMENT/NOTIFICATION SCHEDULER ####################
+
+from apscheduler.schedulers.background import BackgroundScheduler
+scheduler = BackgroundScheduler(daemon=True)
+
+# set true to allows employees available on shift day to be selected if nobody accepted the shift
+FORCE_ASSIGNMENT = True
+
+def autoAssignAndNotify(shiftID):
+    # Automatic shift assignment that triggers phone notifications to the applicants
+    # ASSIGN MUST BE PERFORMED BEFORE SENDING TO AVOID RACE CONDITIONS
+    try:
+        logging.info(f"Auto-assigning shift with ID {shiftID}")
+        employee = dbF.update_shift_auto_assign(shiftID, FORCE_ASSIGNMENT)
+    except:
+        logging.info(f"Error auto-assigning with shiftID {shiftID}")
+        return
+    # notify staff that applied
+    try:
+        logging.info(f"Sending Messages for shift with ID {shiftID}")
+        rejectionMessage(shiftID, getPhoneNumbersOfAppliedStaff(shiftID, 'rejected'))
+        cancelMessage(shiftID, getPhoneNumbersOfAppliedStaff(shiftID, 'cancelled'))
+
+        # auto assign can assign a winner that has not applied
+        winnerPhones = getPhoneNumbersOfAppliedStaff(shiftID, 'winner')
+        if len(winnerPhones) == 0 and employee is not None:
+            # get phone directly from employeeID if they did not apply and were force assigned
+            phone = employee[dbF.TableColumns.phone.name]
+            winnerPhones = [phone]
+        shiftWinnerMessage(shiftID, winnerPhones)
+    except:
+        logging.info(f"Error sending messages for shift with ID {shiftID}")
+        return
+    logging.info(f"Successfully auto-assigned and notified for shift with ID {shiftID}")
+
+def insertShiftIntoScheduler(shiftObj):
+    # inserts shift into the scheduler; shiftObj requires executionTime and shiftID
+    executionTimeString = shiftObj.get(dbF.TableColumns.executionTime.name)
+    shiftID = shiftObj.get(dbF.TableColumns.shiftID.name)
+    try:
+        if executionTimeString is None or shiftID is None:
+            raise Exception
+        executionTime = datetime.fromisoformat(executionTimeString)
+        scheduler.add_job(autoAssignAndNotify, 'date', run_date=executionTime, args=[shiftID])
+        logging.info(f"Scheduled shift with shiftID: {shiftID}, executionTime: {executionTimeString}")
+    except:
+        logging.info(f"Failed to schedule shift with shiftID: {shiftID}, executionTime: {executionTimeString}")
+
+def initializeScheduler():
+    # start scheduler and put intial pending jobs into the scheduler
+    if not scheduler.running:
+        scheduler.start()
+        try:
+            shifts = dbF.read_shifts_pending()
+            for shift in shifts:
+                insertShiftIntoScheduler(shift)
+        except:
+            logging.info("Error initializing assignment executor")
+
+# run initializer
+initializeScheduler()
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
