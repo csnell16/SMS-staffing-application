@@ -848,8 +848,10 @@ def autoAssignAndNotify(shiftID):
         winnerPhones = getPhoneNumbersOfAppliedStaff(shiftID, 'winner')
         if len(winnerPhones) == 0 and employee is not None:
             # get phone directly from employeeID if they did not apply and were force assigned
-            phone = employee[dbF.TableColumns.phone.name]
-            winnerPhones = [phone]
+            if employee[dbF.TableColumns.notifications.name] == dbF.Notifications.OFF.value:
+                winnerPhones = []
+            else:
+                winnerPhones = [employee[dbF.TableColumns.phone.name]]
         shiftWinnerMessage(shiftID, winnerPhones)
     except:
         logging.info(f"Error sending messages for shift with ID {shiftID}")
