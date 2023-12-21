@@ -12,6 +12,8 @@ Postman was used to test API endpoints (https://www.postman.com/)
 DB Browser for SQLite is useful to read the database.db file (https://sqlitebrowser.org/)
 
 ## For the API (python)
+Twilio credendials are REQUIRED TO RUN THE API. Check [aditional details](#additional-notes).
+
 It is recommended by flask to run a python virtual environment.
 The only python packages that were necessary to install for me were flask, Twilio, and apscheduler.
 
@@ -243,6 +245,9 @@ Implements simple features of a CRUD app to allow creation, reading, updating, a
 - SMS updates respect notification settings from the database
 	- if a user has notifications off, assignment updates should not be sent
 - Integrated with the [Shift Auto-Scheduler](#shift-auto-scheduler) to send shift updates sequentially after assignments as to avoid race conditions
+- Log file is created in the directory the API is run
+    - logging tracks the progress and status of calls in the SMS functions, and in the [auto-scheduler](#shift-auto-scheduler)
+    - useful for checking call histories where errors occured
 
 ## Shift Auto-Scheduler
 - On API startup the scheduler adds [auto-assignment](#auto-assignment) jobs for every shift with pending status
@@ -250,6 +255,7 @@ Implements simple features of a CRUD app to allow creation, reading, updating, a
 - When the execution time is reached, it will:
 	- auto-assign the associated shift
 	- Then notify employees based on their notification settings, and the status of the shift/assignment
+- Currently the scheduler runs on whatever timezone the pc running in. Check [additional notes](#additional-notes).
 - Does NOT currently auto-assign pending jobs past execution time on startup nor if shift was added with execution time before current time
 	- query to get pending shifts past execution exists, but nothing automated is currently (2023-12-20) implemented to clean up these unaccounted for shifts
 
@@ -275,14 +281,72 @@ Implements simple features of a CRUD app to allow creation, reading, updating, a
 		- if there is at least one person available on the day of the shift, assign the shift to the available person lowest on the distribution list
 		- if there are no people available that day, mark the shift as 'unable to assign' and exit
 
+# Testing
+All testing done so far has been manual. (2023-12-20)
+- To test individual function calls, running the functions at the bottom of their respecitive files with mock data works well enough for manual testing
+- For functions that do not return but do affect the database you can use DBbrowser for SQLite in [useful tools](#useful-tools)
+- Better test practices are recomended like automated test suites and regression testing so that testing new features is faster and doesn't break old functionalities
+
+For example for manual function or integration testing, at the bottom of databaseFunctions.py you could for example run:
+```
+# initialization calls
+initialize_tables()
+# manual test calls can be run here:
+
+# insert_employee('1', '123456789', 'mmmmhhggghh@mailinator.com', 0)
+# insert_employee('3', '123456789', 'mmkkkekekh@mailinator.com', 1)
+
+# insert_shift('doctor', '2023-11-09 08:00:00','2023-11-09 18:00:00', '2023-11-09 06:00:00')
+# insert_shift('nurse', '2023-11-19 08:00:00', '2023-11-09 12:00:00', '2023-11-19 05:00:00')
+# insert_shift('hr', '2023-12-10 08:00:00', '2023-11-09 09:00:00', '2023-12-10 05:00:00')
+
+# insert_availability('1', '2023-11-09')
+# insert_availability('1', '2023-11-27')
+# insert_availability('3', '2023-12-10')
+
+# print(read_pending_shifts())
+# print(read_shifts_pending_past_execution())
+# print(read_availability_by_employee_and_month('1', '2023-11'))
+# print(read_availability_by_employee_and_month('1', '2023-12'))
+# print(read_availability_by_employee_and_month('3', '2023-11'))
+# print(read_availability_by_employee_and_month('3', '2023-12'))
+```
+Similar can be done for databaseAPI.py
+- caution should be taken since some functions require request data from flask
+    - for functions (API endpoints) that require context it is recomended to use postman to call the API
+- Please note that databaseFunctions.py does NOT have much user validation, but because of the database schema things like foreign key constraints, and uniquness violations throw exceptions
+    - So if you were to try to run the code above twice in a row you would get an error and immediately stop the second time trying to insert employee again because of the uniqueness constraint on employeeIDs
+- databaseAPI.py heavily uses execption catching and responds accordingly to each error of database calls and queries
+    - It should be safe to call exception raising calls since the exceptions are handled, just responses and statuses may be different as a result of error catching
+
+## Postman
+Some tips to setup postman for API endpoint testing from [useful tools](#useful-tools)
+- Create an environment variable for the URL so that if your hosing URL changes it can be easily swapped for all tests
+    - The endpoint being called should look like '{{url}}/getOpenShiftRequests' in postman
+- ensure proper request methods and bodies are given
+    - Almost all requests are strict on whether they use GET, POST, UPDATE, or DELETE methods
+    - Request Bodies are generally in application/json so in the body header, select raw --> JSON to send JSON data
+    - Some responses use the url string to query like '{{url}}/employees/id/\<employeeID>/email'
+
+
+# Style Guide
+Currently (2023-12-20) no style guide nor linter is being used but it is recommended to do so
+
 # Additional Notes
 - Running flask in debug mode can cause some database functions to be called twice
+- The database.db file is created and managed in the directory the API is called
 - Database API requires twilio account_sid, auth_token, and SEND_PHONE to run
 - Twilio requires properly formatted phone numbers to send SMS properly
 	- +AXXXYYYZZZZ
 	- A is area code, XYZ are the 7 phone digits
 - dates/datetimes should be in ISO format for the database
 	- https://www.sqlite.org/lang_datefunc.html
+    - calling sqlite datetime functions, python datetime and strftime() functions recomended to parse times from ISO format
+- The timezone the scheduler runs in is the same timezone the machine running it is using
+    - So if you're running the code in an EST timezone, the scheduler will read '2023-12-20 06:00:00' as 6AM EST on Dec 20, 2023
+    - If you then run the code on a machine in CST, it will read the same '2023-12-20 06:00:00' from the database but 6AM CST
+    - Database Times/dates are currently (2023-12-20) not expected to hold timezone information
+    - All datetime entries in the database are expected to be in the same timezone (All entries from CST, UTC, etc)
 
 # Next Steps (if any)
 The app should be fully functional in the current state (2023-12-20) but some notable places to improve the app are the following:
@@ -296,3 +360,4 @@ The app should be fully functional in the current state (2023-12-20) but some no
 - more testing on all parts
 - better testing practices
 - CI/CD
+- Timezone normailzation/better timezone handling

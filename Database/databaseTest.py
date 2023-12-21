@@ -181,7 +181,7 @@ import databaseFunctions as dbF
 # insert_availability('1', '2023-11-27')
 # insert_availability('3', '2023-12-10')
 
-# print(read_pending_shifts())
+# print(read_shifts_pending())
 # print(read_shifts_pending_past_execution())
 # print(read_availability_by_employee_and_month('1', '2023-11'))
 # print(read_availability_by_employee_and_month('1', '2023-12'))
