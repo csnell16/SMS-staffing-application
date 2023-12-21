@@ -148,13 +148,13 @@ Attributes:
 - executionTime
 	- Text; Should be in ISO format to function properly
 	- 'yyyy-mm-dd HH:MM:SS'
-	- The date+time of when the shift will be auto-assigned and notified (see [Shift Auto-Scheduler](##shift-auto-scheduler))
+	- The date+time of when the shift will be auto-assigned and notified (see [Shift Auto-Scheduler](#shift-auto-scheduler))
 - status
 	- Text; please follow the enumerator to set the value
 	- describes what point in the process the shift is
 		- pending assignment, assigned, cancelled, etc.
 - assignee
-	- Text; Foreign key references employeeID in [employees table](####employees-table)
+	- Text; Foreign key references employeeID in [employees table](#employees-table)
 		- an employee in the employees table must have the same ID to link it
 		- if the employeeID being referenced gets updated, this assignee should get auto-updated since it's set to cascade
 	- If no assignee, value should be NULL
@@ -166,7 +166,7 @@ Description:
 
 Attributes:
 - employeeID
-	- Text; Foreign key references employeeID in [employees table](####employees-table)
+	- Text; Foreign key references employeeID in [employees table](#employees-table)
 - date
 	- Text; Should be in ISO format to function properly
 	- 'yyyy-mm-dd'
@@ -178,9 +178,9 @@ Description:
 
 Attributes:
 - employeeID
-	- Text; Foreign key references employeeID in [employees table](####employees-table)
+	- Text; Foreign key references employeeID in [employees table](#employees-table)
 - shiftID
-	- Text; Foreign key references shiftID in [shifts table](####shifts-table)
+	- Text; Foreign key references shiftID in [shifts table](#shifts-table)
 - bidStatus
 	- Text; please use the enumerator to set the value
 	- describes the state of the bid with respect to the shift
@@ -189,14 +189,14 @@ Attributes:
 #### distribution table
 Description:
 - Stores information for the distribution list with regards to auto-assignments
-- When an employee is added to the [employees table](####employees-table), a trigger automatically puts it to the back of the distribution list
+- When an employee is added to the [employees table](#employees-table), a trigger automatically puts it to the back of the distribution list
 - Not designed to be edited by users except in the case of manually pushing employees to the back of the list
-- Meant to be accessed programmatically by assignment and  [auto-assignment](##auto-assignment) functions
+- Meant to be accessed programmatically by assignment and  [auto-assignment](#auto-assignment) functions
 - employees should always have exactly 1 pending entry in the table 
 
 Attributes:
 - employeeID
-	- Text; Foreign key references employeeID in [employees table](#### employees table)
+	- Text; Foreign key references employeeID in [employees table](# employees table)
 - distOrder
 	- Integer; auto-increments
 	- lower order number --> first to be auto-assigned
@@ -206,7 +206,7 @@ Attributes:
 	- if the entry was used to assign an employee, this value should be updated and a new pending entry should be added into the table to maintain exactly 1 pending entry in the table
 	- can be read by humans to find out where the distribution table was consulted for assignment 
 - shiftID
-	- Text; can be anything but should reference a shiftID in the [shifts table](####shifts-table)
+	- Text; can be anything but should reference a shiftID in the [shifts table](#shifts-table)
 	- not a foreign key to loosen restrictions on assignment and reduce possible errors that can occur when auto-assigning
 	- more for humans to read to find out when and how a shift was assigned with respect to the table along with the distStatus
 
