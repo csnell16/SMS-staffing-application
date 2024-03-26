@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'home.dart';
+import 'role_selection_page.dart';
 
 
 void main() {
@@ -27,8 +28,40 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Montserrat',
         primaryColor: Colors.indigo
       ),
-      home: Scaffold(
-        body: NavigationBarPage(selectedIndex: 0,),
+      home: RoleSelectionPage(),
+      routes: {
+        '/adminLogin': (context) => AdminLoginPage(),
+        '/employeeLogin': (context)=> EmployeeLoginPage(),
+      }
+    );
+  }
+}
+
+class AdminLoginPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Replace with your AdminLoginPage implementation
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Admin Login'),
+      ),
+      body: Center(
+        child: Text('Admin Login Content goes here'),
+      ),
+    );
+  }
+}
+
+class EmployeeLoginPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Replace with your EmployeeLoginPage implementation
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Employee Login'),
+      ),
+      body: Center(
+        child: Text('Employe Login Content goes here'),
       ),
     );
   }
