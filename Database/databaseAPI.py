@@ -673,9 +673,9 @@ def shiftCreate():
     try:
         position = data.get('position', 'Default Position')
         selected_date = datetime.fromisoformat(data.get('selectedDate', '2024-01-01')).strftime("%Y-%m-%d")
-        reply_deadline = datetime.fromisoformat(f'{selected_date} {data.get('replyDeadline', '08:00')}').strftime('%H:%M')
-        from_time = datetime.fromisoformat(f'{selected_date} {data.get('fromTime', '09:00')}').strftime('%H:%M')
-        to_time = datetime.fromisoformat(f'{selected_date} {data.get('toTime', '17:00')}').strftime('%H:%M')
+        reply_deadline = datetime.fromisoformat(f"{selected_date} {data.get('replyDeadline', '08:00')}").strftime('%H:%M')
+        from_time = datetime.fromisoformat(f"{selected_date} {data.get('fromTime', '09:00')}").strftime('%H:%M')
+        to_time = datetime.fromisoformat(f"{selected_date} {data.get('toTime', '17:00')}").strftime('%H:%M')
     except:
         logging.info("Shift extraction failure: improper date/time format")
         return jsonify({'status': 'failure', 'message': 'selectedDate must be in yyyy-mm-dd format, times(replyDeadline, fromTime, toTime) must be in HH:MM format'}), 500
