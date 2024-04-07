@@ -21,7 +21,8 @@ class RoleSelectionPage extends StatelessWidget {
     
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 30, vertical: 80),
-        child: Column(
+        child: 
+        Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[

@@ -1,9 +1,36 @@
+import sqlite3
 from flask import Flask, request, make_response
 from sqlite3 import IntegrityError
 import databaseFunctions as dbF
+import bcrypt
+from flask import jsonify
 from databaseFunctions import ItemNotFound
 
 app = Flask(__name__)
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data['email']
+    password = data['password'].encode('utf-8')
+
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM employees WHERE email = ?", (email,))
+    user = cursor.fetchone()
+
+    if user:
+        stored_password = user[4].encode('utf-8')
+
+        # Check password
+        if bcrypt.checkpw(password, stored_password):
+            return jsonify({"message": "Login successful"}), 200
+        else:
+            return jsonify({"message": "Invalid credentials"}), 401
+    else:
+        return jsonify({"message": "User not found"}), 404
+
 
 @app.route("/employees", methods=['POST'])
 def create_employee():

@@ -1,13 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'CreateShiftRequest.dart';
+import 'dart:convert';
 
-class EmployeeLoginPage extends StatelessWidget {
+class EmployeeLoginPage extends StatefulWidget {
   const EmployeeLoginPage({super.key});
+
+  @override
+  State<EmployeeLoginPage> createState() => _EmployeeLoginPageState();
+
+}
+
+class _EmployeeLoginPageState extends State<EmployeeLoginPage> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  Future<void> _login() async {
+    var url = Uri.parse('http://localhost:5000/api/login');
+    var response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: json.encode({
+        'email': _emailController.text,
+        'password': _passwordController.text,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const CreateShiftRequestPage()));
+    } 
+    else {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Login Failed"),
+          content: const Text("Login failed. Please check your credentials."),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-      ),
+      appBar: AppBar(),
+
       body: Container(
         padding: const EdgeInsets.all(16),
         constraints: const BoxConstraints.expand(),
@@ -30,7 +78,7 @@ class EmployeeLoginPage extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
             Container(
               width: 320,
               height: 240,
@@ -43,8 +91,9 @@ class EmployeeLoginPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextFormField(
+                    controller: _emailController,
                     decoration: const InputDecoration(
-                      hintText: 'Username',
+                      hintText: 'Email',
                       hintStyle: TextStyle(color: Colors.white70, fontSize: 20),
                       enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white),
@@ -54,7 +103,8 @@ class EmployeeLoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
-                    obscureText: true, // Set to true to obscure the password
+                    controller: _passwordController,
+                    obscureText: true,
                     decoration: const InputDecoration(
                       hintText: 'Password',
                       hintStyle: TextStyle(color: Colors.white70, fontSize: 20),
@@ -66,12 +116,10 @@ class EmployeeLoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: () {
-                      // Add functionality here
-                    },
+                    onPressed: _login,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Color(0xFF120543), 
-                      backgroundColor: Color.fromARGB(255, 228, 160, 82), 
+                      foregroundColor: const Color(0xFF120543), 
+                      backgroundColor: const Color.fromARGB(255, 228, 160, 82), 
                     ),
                     child: const Text(
                       'Login', // Button text
