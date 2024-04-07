@@ -1,9 +1,36 @@
+import sqlite3
 from flask import Flask, request, make_response
 from sqlite3 import IntegrityError
 import databaseFunctions as dbF
+import bcrypt
+from flask import jsonify
 from databaseFunctions import ItemNotFound
 
 app = Flask(__name__)
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data['email']
+    password = data['password'].encode('utf-8')
+
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM employees WHERE email = ?", (email,))
+    user = cursor.fetchone()
+
+    if user:
+        stored_password = user[4].encode('utf-8')
+
+        # Check password
+        if bcrypt.checkpw(password, stored_password):
+            return jsonify({"message": "Login successful"}), 200
+        else:
+            return jsonify({"message": "Invalid credentials"}), 401
+    else:
+        return jsonify({"message": "User not found"}), 404
+
 
 @app.route("/employees", methods=['POST'])
 def create_employee():
@@ -673,9 +700,9 @@ def shiftCreate():
     try:
         position = data.get('position', 'Default Position')
         selected_date = datetime.fromisoformat(data.get('selectedDate', '2024-01-01')).strftime("%Y-%m-%d")
-        reply_deadline = datetime.fromisoformat(f'{selected_date} {data.get('replyDeadline', '08:00')}').strftime('%H:%M')
-        from_time = datetime.fromisoformat(f'{selected_date} {data.get('fromTime', '09:00')}').strftime('%H:%M')
-        to_time = datetime.fromisoformat(f'{selected_date} {data.get('toTime', '17:00')}').strftime('%H:%M')
+        reply_deadline = datetime.fromisoformat(f"{selected_date} {data.get('replyDeadline', '08:00')}").strftime('%H:%M')
+        from_time = datetime.fromisoformat(f"{selected_date} {data.get('fromTime', '09:00')}").strftime('%H:%M')
+        to_time = datetime.fromisoformat(f"{selected_date} {data.get('toTime', '17:00')}").strftime('%H:%M')
     except:
         logging.info("Shift extraction failure: improper date/time format")
         return jsonify({'status': 'failure', 'message': 'selectedDate must be in yyyy-mm-dd format, times(replyDeadline, fromTime, toTime) must be in HH:MM format'}), 500

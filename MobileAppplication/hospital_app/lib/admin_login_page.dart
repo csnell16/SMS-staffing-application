@@ -7,7 +7,7 @@ class AdminLoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-      ),
+    ),
       body: Container(
         padding: const EdgeInsets.all(16),
         constraints: const BoxConstraints.expand(),
@@ -15,7 +15,10 @@ class AdminLoginPage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
-            colors: [Colors.purple.shade900, Colors.lightBlueAccent],
+            colors: [
+              Colors.purple.shade900,
+              Colors.lightBlueAccent,
+            ],
           ),
         ),
         child: Column(
