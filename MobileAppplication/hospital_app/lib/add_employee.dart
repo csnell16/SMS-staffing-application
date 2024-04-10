@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 
-class EmployeeLoginPage extends StatelessWidget {
-  const EmployeeLoginPage({super.key});
+class EmployeeSignUpPage extends StatelessWidget {
+  const EmployeeSignUpPage({Key? key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-      ),
+      appBar: AppBar(),
       body: Container(
         padding: const EdgeInsets.all(16),
         constraints: const BoxConstraints.expand(),
@@ -18,22 +17,18 @@ class EmployeeLoginPage extends StatelessWidget {
             colors: [Colors.purple.shade900, Colors.lightBlueAccent],
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: ListView(
           children: [
             const Text(
-              'Employee Login',
+              'Employee Sign Up',
               style: TextStyle(
-                fontSize: 40,
+                fontSize: 35,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
             Container(
-              width: 320,
-              height: 240,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFF120543),
@@ -44,7 +39,17 @@ class EmployeeLoginPage extends StatelessWidget {
                 children: [
                   TextFormField(
                     decoration: const InputDecoration(
-                      hintText: 'Username',
+                      hintText: 'Email',
+                      hintStyle: TextStyle(color: Colors.white70, fontSize: 20),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      hintText: 'Phone Number',
                       hintStyle: TextStyle(color: Colors.white70, fontSize: 20),
                       enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white),
@@ -64,17 +69,42 @@ class EmployeeLoginPage extends StatelessWidget {
                     ),
                     style: const TextStyle(color: Colors.white),
                   ),
+                  TextFormField(
+                    obscureText: true, // Set to true to obscure the password
+                    decoration: const InputDecoration(
+                      hintText: 'Confirm Password',
+                      hintStyle: TextStyle(color: Colors.white70, fontSize: 20),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  
+                  CheckboxListTile(
+                    title: const Text(
+                      'Recieve Notifications',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    value: false, // Initial value
+                    onChanged: (bool? value) {
+                      // Do something with the value
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                    activeColor: Colors.white,
+                    checkColor: Colors.lightBlueAccent,
+                  ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () {
                       // Add functionality here
                     },
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Color(0xFF120543), 
-                      backgroundColor: Color.fromARGB(255, 228, 160, 82), 
+                      foregroundColor: Color(0xFF120543),
+                      backgroundColor: Color.fromARGB(255, 228, 160, 82),
                     ),
                     child: const Text(
-                      'Login', // Button text
+                      'Sign up', // Button text
                       style: TextStyle(fontSize: 16), // Text size
                     ),
                   ),

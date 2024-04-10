@@ -3,11 +3,11 @@ import databaseFunctions as dbF
 
 # this file is meant for manual testing and function test examples
 
-# DATABASE_FILE = './database.db'
+DATABASE_FILE = './database.db'
 
-# connection = sqlite3.connect(DATABASE_FILE)
-# cursor = connection.cursor()
-# connection.close()
+connection = sqlite3.connect(DATABASE_FILE)
+cursor = connection.cursor()
+connection.close()
 
 # ************ INSERT TESTS ************
 # INSERT EMPLOYEES
@@ -19,9 +19,9 @@ import databaseFunctions as dbF
 
 # INSERT SHIFTS
 # inserting shifts should give unique shift ids, status should be 0, assignee should be null
-# insert_shift('doctor', '2023-11-09 08:00:00','2023-11-09 18:00:00', '2023-11-09 06:00:00')
-# insert_shift('nurse', '2023-11-19 08:00:00', '2023-11-09 12:00:00', '2023-11-19 05:00:00')
-# insert_shift('hr', '2023-12-10 08:00:00', '2023-11-09 09:00:00', '2023-12-10 05:00:00')
+# dbF.insert_shift('doctor', '2023-11-09 08:00:00','2023-11-09 18:00:00', '2023-11-09 06:00:00')
+# dbF.insert_shift('nurse', '2023-11-19 08:00:00', '2023-11-09 12:00:00', '2023-11-19 05:00:00')
+# dbF.insert_shift('hr', '2023-12-10 08:00:00', '2023-11-09 09:00:00', '2023-12-10 05:00:00')
 
 # INSERT AVAILABILITY
 # ensure duplicate tuples are ignored on insert
@@ -112,9 +112,9 @@ import databaseFunctions as dbF
 # print(read_employee_notifications('3'))
 # print(read_employee_notifications('91'))
 
-# print(read_shift('1'))
-# print(read_shift('3'))
-# print(read_shift('-91'))
+print(dbF.read_shift('1'))
+print(dbF.read_shift('3'))
+print(dbF.read_shift('-91'))
 
 # print(read_shifts_by_assignee('1'))
 # print(read_shifts_by_assignee(None))
