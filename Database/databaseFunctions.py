@@ -1,4 +1,5 @@
 import sqlite3
+import bcrypt
 from enum import Enum, auto
 
 class Notifications(Enum): # Enum value
@@ -112,7 +113,8 @@ def initialize_tables():
                 employeeID TEXT PRIMARY KEY,
                 phone TEXT,
                 email TEXT,
-                notifications INTEGER DEFAULT {Notifications.ON.value}
+                notifications INTEGER DEFAULT {Notifications.ON.value},
+                password TEXT
                 )''')
 
     # Shifts table
@@ -162,8 +164,32 @@ def initialize_tables():
                 END''')
 
 # db insert functions
-def insert_employee(employeeID, phone, email, notifications=Notifications.ON.value):
-    queryHelper('INSERT INTO employees VALUES (?, ?, ?, ?)', (employeeID, phone, email, notifications))
+def insert_employee(employeeID, phone, email, password, notifications=Notifications.ON.value):
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    queryHelper('INSERT INTO employees (employeeID, phone, email, notifications, password) VALUES (?, ?, ?, ?, ?)', (employeeID, phone, email, notifications, hashed_password))
+
+def get_employee_by_email(email):
+    try:
+        connection = sqlite3.connect(DATABASE_FILE)
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM employees WHERE email = ?", (email,))
+        employee = cursor.fetchone()
+        connection.close()
+        if employee:
+            keys = ['employeeID', 'phone', 'email', 'notifications', 'password']
+            return dict(zip(keys, employee))
+        return None
+    except Exception as e:
+        print(f"Error fetching employee by email: {str(e)}")
+        return None
+    
+def authenticate_employee(email, password):
+    employee = queryHelper('SELECT * FROM employees WHERE email = ?', (email,), FetchType.ONE.value)
+    if employee is None:
+        return False
+
+    stored_password_hash = employee[4]
+    return bcrypt.checkpw(password.encode('utf-8'), stored_password_hash)
 
 def insert_shift(position, startDateTime, endDateTime, executionTime):
     res = queryHelper('''INSERT INTO shifts (position, startDateTime, endDateTime, executionTime) VALUES (?, ?, ?, ?) RETURNING  *''',
