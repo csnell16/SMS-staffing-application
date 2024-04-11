@@ -110,12 +110,22 @@ def initialize_tables():
     
     # Employees table
     queryHelper(f'''CREATE TABLE IF NOT EXISTS employees(
-                employeeID TEXT PRIMARY KEY,
+                employeeID INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT,
                 email TEXT,
                 notifications INTEGER DEFAULT {Notifications.ON.value},
                 password TEXT
                 )''')
+    
+    # Admins table
+    queryHelper('''CREATE TABLE IF NOT EXISTS admins (
+                   adminID INTEGER PRIMARY KEY AUTOINCREMENT,
+                   phone TEXT,
+                   email TEXT UNIQUE,
+                   notifications INTEGER DEFAULT 1,
+                   password TEXT
+                   )''')
+    
 
     # Shifts table
     queryHelper(f'''CREATE TABLE IF NOT EXISTS shifts(
@@ -166,7 +176,31 @@ def initialize_tables():
 # db insert functions
 def insert_employee(employeeID, phone, email, password, notifications=Notifications.ON.value):
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    queryHelper('INSERT INTO employees (employeeID, phone, email, notifications, password) VALUES (?, ?, ?, ?, ?)', (employeeID, phone, email, notifications, hashed_password))
+    queryHelper('INSERT INTO employees (employeeID, phone, email, notifications, password) VALUES (?, ?, ?, ?, ?)', 
+                (employeeID, phone, email, notifications, hashed_password))
+
+def authenticate_employee(email, password):
+    employee = queryHelper('SELECT * FROM employees WHERE email = ?', (email,), FetchType.ONE.value)
+    if employee is None:
+        return False
+
+    stored_password_hash = employee[4]
+    return bcrypt.checkpw(password.encode('utf-8'), stored_password_hash)
+
+
+def insert_admin(adminID, phone, email, password, notifications=Notifications.ON.value):
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    queryHelper('INSERT INTO admins (adminID, phone, email, notifications, password) VALUES (?, ?, ?, ?, ?)', 
+                (adminID, phone, email, notifications, hashed_password))
+
+
+def authenticate_admin(email, password):
+    admin = queryHelper('SELECT * FROM admins WHERE email = ?', (email,), FetchType.ONE.value)
+    if admin is None:
+        return False
+
+    stored_password_hash = admin[4]
+    return bcrypt.checkpw(password.encode('utf-8'), stored_password_hash.encode('utf-8'))
 
 def get_employee_by_email(email):
     try:
@@ -183,14 +217,6 @@ def get_employee_by_email(email):
         print(f"Error fetching employee by email: {str(e)}")
         return None
     
-def authenticate_employee(email, password):
-    employee = queryHelper('SELECT * FROM employees WHERE email = ?', (email,), FetchType.ONE.value)
-    if employee is None:
-        return False
-
-    stored_password_hash = employee[4]
-    return bcrypt.checkpw(password.encode('utf-8'), stored_password_hash)
-
 def insert_shift(position, startDateTime, endDateTime, executionTime):
     res = queryHelper('''INSERT INTO shifts (position, startDateTime, endDateTime, executionTime) VALUES (?, ?, ?, ?) RETURNING  *''',
                       (position, startDateTime, endDateTime, executionTime),

@@ -8,7 +8,7 @@ from databaseFunctions import ItemNotFound
 
 app = Flask(__name__)
 
-@app.route('/api/login', methods=['POST'])
+@app.route('/api/employee/login', methods=['POST'])
 def login():
     data = request.get_json()
     email = data['email']
@@ -31,6 +31,28 @@ def login():
     else:
         return jsonify({"message": "User not found"}), 404
 
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    data = request.get_json()
+    email = data['email']
+    password = data['password'].encode('utf-8')
+
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM admins WHERE email = ?", (email,))
+    user = cursor.fetchone()
+
+    if user:
+        stored_password = user[4].encode('utf-8')
+
+        # Check password
+        if bcrypt.checkpw(password, stored_password):
+            return jsonify({"message": "Login successful"}), 200
+        else:
+            return jsonify({"message": "Invalid credentials"}), 401
+    else:
+        return jsonify({"message": "User not found"}), 404
 
 @app.route("/employees", methods=['POST'])
 def create_employee():

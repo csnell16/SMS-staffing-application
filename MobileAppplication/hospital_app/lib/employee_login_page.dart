@@ -16,7 +16,7 @@ class _EmployeeLoginPageState extends State<EmployeeLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
 
   Future<void> _login() async {
-    var url = Uri.parse('http://localhost:5000/api/login');
+    var url = Uri.parse('http://localhost:5000/api/employee/login');
     var response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
