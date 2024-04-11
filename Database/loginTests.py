@@ -1,21 +1,21 @@
 import bcrypt
 
-# Employee Login Test(if database is empty)
+# # Employee Login Test(if database is empty)
 
-# The password you want to hash
-password = "password"
+# # The password you want to hash
+# password = "password"
 
-# Generate a salt and hash the password
-hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+# # Generate a salt and hash the password
+# hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-# Print the hashed password to use in your SQL insert
-print(hashed_password)
+# # Print the hashed password to use in your SQL insert
+# print(hashed_password)
 
-#run login Tests.py --> python3 or python loginTests.py run
+# #run login Tests.py --> python3 or python loginTests.py run
 
-# sqlite3 database.db
-# INSERT INTO employees (employeeID, phone, email, notifications, password) 
-# VALUES ('1', '1234567890', 'employee@example.com', 1, '$2b$12$PMgBPDc4sugALjyGZ8Pll.8Q5TTT4kT7gPh.YZ3g0HnwJSgOZM/zK');
+# # sqlite3 database.db
+# # INSERT INTO employees (employeeID, phone, email, notifications, password) 
+# # VALUES ('1', '1234567890', 'employee@example.com', 1, '$2b$12$PMgBPDc4sugALjyGZ8Pll.8Q5TTT4kT7gPh.YZ3g0HnwJSgOZM/zK');
 
 
 #---------------------------------------------------------------------------------------
@@ -23,3 +23,17 @@ print(hashed_password)
 #login Testing
 #for IOS simulator var url = Uri.parse('http://localhost:5000/api/login');
 #for Android simulator var url = Uri.parse('http://10.0.2.2:5000/api/login');
+
+#---------------------------------------------------------------------------------------
+
+
+# Admin Login Test(if admins table is empty)
+
+
+# password = "adminPassword"
+# hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+# print(hashed_password)
+
+# INSERT INTO admins (adminID, phone, email, notifications, password) 
+# VALUES ('1', '12342143', 'admin@example.com', 1, '$2b$12$s/FBxCpM/sq.o1pDviNb0euyYj.2I2wCA7dOYB4SSfbIbW26h6OpW');
