@@ -1,7 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'add_employee.dart';
 
-class AdminLoginPage extends StatelessWidget {
+class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});
+
+@override
+  _AdminLoginPageState createState() => _AdminLoginPageState();
+}
+
+class _AdminLoginPageState extends State<AdminLoginPage> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  Future<void> _loginAdmin() async {
+    var url = Uri.parse('http://localhost:5000/api/admin/login');
+    var response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'email': _emailController.text,
+        'password': _passwordController.text,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => EmployeeSignUpPage()));
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Login Failed'),
+          content: const Text('Invalid credentials. Please try again.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +64,7 @@ class AdminLoginPage extends StatelessWidget {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          //crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Text(
               'Admin Login',
@@ -46,8 +87,9 @@ class AdminLoginPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextFormField(
+                    controller: _emailController,
                     decoration: const InputDecoration(
-                      hintText: 'Username',
+                      hintText: 'Email',
                       hintStyle: TextStyle(color: Colors.white70, fontSize: 20),
                       enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white),
@@ -57,7 +99,8 @@ class AdminLoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
-                    obscureText: true, // Set to true to obscure the password
+                    controller: _passwordController,
+                    obscureText: true,
                     decoration: const InputDecoration(
                       hintText: 'Password',
                       hintStyle: TextStyle(color: Colors.white70, fontSize: 20),
@@ -69,9 +112,7 @@ class AdminLoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: () {
-                      // Add functionality here
-                    },
+                    onPressed: _loginAdmin,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Color(0xFF120543), 
                       backgroundColor: Color.fromARGB(255, 228, 160, 82), 
