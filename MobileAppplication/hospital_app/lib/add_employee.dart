@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class EmployeeSignUpPage extends StatelessWidget {
-  const EmployeeSignUpPage({Key? key});
+class AddEmployeePage extends StatelessWidget {
+  const AddEmployeePage({Key? key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class EmployeeSignUpPage extends StatelessWidget {
         child: ListView(
           children: [
             const Text(
-              'Employee Sign Up',
+              'Add Employee',
               style: TextStyle(
                 fontSize: 35,
                 fontWeight: FontWeight.bold,
@@ -104,7 +104,7 @@ class EmployeeSignUpPage extends StatelessWidget {
                       backgroundColor: Color.fromARGB(255, 228, 160, 82),
                     ),
                     child: const Text(
-                      'Sign up', // Button text
+                      'Add', // Button text
                       style: TextStyle(fontSize: 16), // Text size
                     ),
                   ),
