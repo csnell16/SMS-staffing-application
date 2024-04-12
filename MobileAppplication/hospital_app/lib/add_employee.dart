@@ -6,7 +6,7 @@ class AddEmployeePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(title: const Text("Add Employee"),),
       body: Container(
         padding: const EdgeInsets.all(16),
         constraints: const BoxConstraints.expand(),
@@ -19,14 +19,6 @@ class AddEmployeePage extends StatelessWidget {
         ),
         child: ListView(
           children: [
-            const Text(
-              'Add Employee',
-              style: TextStyle(
-                fontSize: 35,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
             const SizedBox(height: 30),
             Container(
               padding: const EdgeInsets.all(16),
