@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'add_employee.dart';
+import 'admin_page.dart';
 
 class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});
@@ -15,7 +15,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
 
   Future<void> _loginAdmin() async {
-    var url = Uri.parse('http://localhost:5000/api/admin/login');
+    var url = Uri.parse('http://localhost:5000/admin/login');
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -26,7 +26,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     );
 
     if (response.statusCode == 200) {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => EmployeeSignUpPage()));
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => AdminPage()));
     } else {
       showDialog(
         context: context,

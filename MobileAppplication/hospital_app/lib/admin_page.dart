@@ -3,10 +3,11 @@ import 'package:hospital_app/add_admin.dart';
 import 'package:hospital_app/add_employee.dart';
 
 
-class AddSelectionPage extends StatelessWidget {
+class AdminPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -18,18 +19,18 @@ class AddSelectionPage extends StatelessWidget {
             ] 
           ),
         ),
-      
+        child:Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 80),
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 200),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               
               Container(
-                margin: EdgeInsets.only(bottom: 60),
+                margin: EdgeInsets.only(bottom: 80),
                 child: const Text(
-                  'Select a user to add',
+                  'Select a User To Add',
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
@@ -59,7 +60,7 @@ class AddSelectionPage extends StatelessWidget {
                   style: TextStyle(color: Colors.white, fontSize: 20),
                 ),
               ),
-
+              
               const SizedBox(height: 50),
 
               ElevatedButton(
@@ -81,9 +82,10 @@ class AddSelectionPage extends StatelessWidget {
                 child: const Text(
                   'Add Employee',
                   style: TextStyle(color: Colors.white, fontSize: 20),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

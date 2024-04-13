@@ -1,58 +1,88 @@
 import sqlite3
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response,jsonify
 from sqlite3 import IntegrityError
 import databaseFunctions as dbF
 import bcrypt
 from flask import jsonify
-from databaseFunctions import ItemNotFound
+from databaseFunctions import ItemNotFound, get_db_connection
 
 app = Flask(__name__)
 
-@app.route('/api/employee/login', methods=['POST'])
-def login():
+# employee login API
+@app.route('/employee/login', methods=['POST'])
+def employee_login():
     data = request.get_json()
     email = data['email']
     password = data['password'].encode('utf-8')
 
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
-
     cursor.execute("SELECT * FROM employees WHERE email = ?", (email,))
     user = cursor.fetchone()
+    conn.close()
 
     if user:
-        stored_password = user[4].encode('utf-8')
+        stored_password = user['password'].encode('utf-8')
 
-        # Check password
         if bcrypt.checkpw(password, stored_password):
             return jsonify({"message": "Login successful"}), 200
         else:
             return jsonify({"message": "Invalid credentials"}), 401
     else:
         return jsonify({"message": "User not found"}), 404
-
-@app.route('/api/admin/login', methods=['POST'])
+    
+# Admin Login API
+@app.route('/admin/login', methods=['POST'])
 def admin_login():
     data = request.get_json()
     email = data['email']
     password = data['password'].encode('utf-8')
 
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
-
     cursor.execute("SELECT * FROM admins WHERE email = ?", (email,))
     user = cursor.fetchone()
+    conn.close()
 
     if user:
-        stored_password = user[4].encode('utf-8')
+        stored_password = user['password']
 
-        # Check password
         if bcrypt.checkpw(password, stored_password):
             return jsonify({"message": "Login successful"}), 200
         else:
             return jsonify({"message": "Invalid credentials"}), 401
     else:
         return jsonify({"message": "User not found"}), 404
+
+
+# Adding Admin API
+@app.route('/register/admin', methods=['POST'])
+def register_admin():
+    data = request.get_json()
+    email = data.get('email')
+    phone = data.get('phone')
+    password = data.get('password')
+    notifications = data.get('notifications', 1)
+
+    if not email or not phone or not password:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM admins WHERE email = ?", (email,))
+    admin = cursor.fetchone()
+    if admin:
+        conn.close()
+        return jsonify({'error': 'Admin with this email already exists'}), 409
+
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+    cursor.execute('INSERT INTO admins (email, phone, password, notifications) VALUES (?, ?, ?, ?)',
+                (email, phone, hashed_password, notifications))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Admin registered successfully'}), 201
 
 @app.route("/employees", methods=['POST'])
 def create_employee():

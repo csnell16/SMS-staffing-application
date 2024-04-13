@@ -16,7 +16,7 @@ class _EmployeeLoginPageState extends State<EmployeeLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
 
   Future<void> _login() async {
-    var url = Uri.parse('http://localhost:5000/api/employee/login');
+    var url = Uri.parse('http://localhost:5000/employee/login');
     var response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
@@ -35,7 +35,7 @@ class _EmployeeLoginPageState extends State<EmployeeLoginPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text("Login Failed"),
-          content: const Text("Login failed. Please check your credentials."),
+          content: const Text("Invalid credentials. Please try again."),
           actions: <Widget>[
             TextButton(
               child: const Text("OK"),
