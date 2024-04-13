@@ -178,30 +178,29 @@ def insert_employee(employeeID, phone, email, password, notifications=Notificati
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     queryHelper('INSERT INTO employees (employeeID, phone, email, notifications, password) VALUES (?, ?, ?, ?, ?)', 
                 (employeeID, phone, email, notifications, hashed_password))
+    
+def get_db_connection():
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def authenticate_employee(email, password):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM employees WHERE email = ?', (email,))
     employee = cursor.fetchone()
-    conn.close()
 
     if employee is None:
         return False
 
     stored_password_hash = employee['password']
-    return bcrypt.checkpw(password.encode('utf-8'), stored_password_hash)
+    return bcrypt.checkpw(password.encode('utf-8'), stored_password_hash.encode('utf-8'))
 
 
 def insert_admin(adminID, phone, email, password, notifications=Notifications.ON.value):
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     queryHelper('INSERT INTO admins (adminID, phone, email, notifications, password) VALUES (?, ?, ?, ?, ?)', 
                 (adminID, phone, email, notifications, hashed_password))
-
-def get_db_connection():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    return conn
 
 def authenticate_admin(email, password):
     conn = get_db_connection()

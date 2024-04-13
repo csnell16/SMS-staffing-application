@@ -22,7 +22,7 @@ def employee_login():
     conn.close()
 
     if user:
-        stored_password = user['password'].encode('utf-8')
+        stored_password = user['password']
 
         if bcrypt.checkpw(password, stored_password):
             return jsonify({"message": "Login successful"}), 200
@@ -83,6 +83,36 @@ def register_admin():
     conn.close()
 
     return jsonify({'message': 'Admin registered successfully'}), 201
+
+# Adding Employee API
+@app.route('/register/employee', methods=['POST'])
+def register_employee():
+    data = request.get_json()
+    email = data.get('email')
+    phone = data.get('phone')
+    password = data.get('password')
+    notifications = data.get('notifications', 1)
+
+    if not email or not phone or not password:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM employees WHERE email = ?", (email,))
+    employee = cursor.fetchone()
+    if employee:
+        conn.close()
+        return jsonify({'error': 'Employee with this email already exists'}), 409
+
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+    cursor.execute('INSERT INTO employees (email, phone, password, notifications) VALUES (?, ?, ?, ?)',
+                (email, phone, hashed_password, notifications))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Employee registered successfully'}), 201
+
 
 @app.route("/employees", methods=['POST'])
 def create_employee():
